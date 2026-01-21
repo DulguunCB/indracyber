@@ -16,6 +16,7 @@ import AdminCourseLessons from "./pages/AdminCourseLessons";
 import AdminInstructors from "./pages/AdminInstructors";
 import AdminPayments from "./pages/AdminPayments";
 import AdminSettings from "./pages/AdminSettings";
+import AdminPromoCodes from "./pages/AdminPromoCodes";
 import Contact from "./pages/Contact";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
@@ -42,6 +43,7 @@ const App = () => (
           <Route path="/admin/courses/:courseId/lessons" element={<AdminCourseLessons />} />
           <Route path="/admin/instructors" element={<AdminInstructors />} />
           <Route path="/admin/payments" element={<AdminPayments />} />
+          <Route path="/admin/promo-codes" element={<AdminPromoCodes />} />
           <Route path="/admin/settings" element={<AdminSettings />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/profile" element={<Profile />} />

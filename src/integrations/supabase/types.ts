@@ -174,6 +174,39 @@ export type Database = {
         }
         Relationships: []
       }
+      promo_codes: {
+        Row: {
+          code: string
+          created_at: string
+          discount_percent: number
+          expires_at: string | null
+          id: string
+          is_active: boolean | null
+          usage_limit: number | null
+          used_count: number | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          discount_percent: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          usage_limit?: number | null
+          used_count?: number | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          discount_percent?: number
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          usage_limit?: number | null
+          used_count?: number | null
+        }
+        Relationships: []
+      }
       purchases: {
         Row: {
           amount: number
@@ -181,6 +214,7 @@ export type Database = {
           id: string
           payment_id: string | null
           payment_method: string | null
+          promo_code_id: string | null
           purchased_at: string
           status: string | null
           user_id: string
@@ -191,6 +225,7 @@ export type Database = {
           id?: string
           payment_id?: string | null
           payment_method?: string | null
+          promo_code_id?: string | null
           purchased_at?: string
           status?: string | null
           user_id: string
@@ -201,6 +236,7 @@ export type Database = {
           id?: string
           payment_id?: string | null
           payment_method?: string | null
+          promo_code_id?: string | null
           purchased_at?: string
           status?: string | null
           user_id?: string
@@ -211,6 +247,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_promo_code_id_fkey"
+            columns: ["promo_code_id"]
+            isOneToOne: false
+            referencedRelation: "promo_codes"
             referencedColumns: ["id"]
           },
         ]
