@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { BookOpen, PlayCircle, Clock, GraduationCap, Loader2, CheckCircle2 } from "lucide-react";
+import { BookOpen, PlayCircle, Clock, GraduationCap, Loader2, CheckCircle2, User as UserIcon } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -107,12 +107,23 @@ const Dashboard = () => {
     <Layout>
       <div className="bg-primary py-12">
         <div className="container">
-          <h1 className="text-3xl font-bold text-primary-foreground mb-2">
-            Сайн байна уу, {profile?.full_name || "Суралцагч"}!
-          </h1>
-          <p className="text-primary-foreground/80">
-            Таны сургалтууд энд байна
-          </p>
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div>
+              <h1 className="text-3xl font-bold text-primary-foreground mb-2">
+                Сайн байна уу, {profile?.full_name || "Суралцагч"}!
+              </h1>
+              <p className="text-primary-foreground/80">
+                Таны сургалтууд энд байна
+              </p>
+            </div>
+            <Link
+              to="/profile"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-primary-foreground/10 hover:bg-primary-foreground/20 text-primary-foreground rounded-lg transition-colors"
+            >
+              <UserIcon className="h-4 w-4" />
+              Профайл засах
+            </Link>
+          </div>
         </div>
       </div>
 
