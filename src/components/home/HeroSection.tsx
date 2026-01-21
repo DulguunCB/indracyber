@@ -17,24 +17,22 @@ const HeroSection = () => {
           {/* Content */}
           <div className="text-center lg:text-left animate-fade-in">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground mb-6 leading-tight">
-              Мэргэжлийн ур чадвараа{" "}
-              <span className="text-accent">онлайнаар</span> хөгжүүл
+              Мэргэжлийн ур чадвараа <span className="text-accent">онлайнаар</span> хөгжүүл
             </h1>
             <p className="text-lg md:text-xl text-primary-foreground/80 mb-8 max-w-xl mx-auto lg:mx-0">
-              Монголын шилдэг багш нартай хамтран бэлтгэсэн чанартай сургалтуудаас суралц. Веб хөгжүүлэлт, програмчлал, AI гэх мэт олон төрлийн сургалтууд.
+              Монголын шилдэг багш нартай хамтран бэлтгэсэн чанартай сургалтуудаас суралц. Веб хөгжүүлэлт, програмчлал,
+              AI гэх мэт олон төрлийн сургалтууд.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
               <Button variant="hero" size="xl" asChild>
                 <Link to="/courses">
                   <Play className="h-5 w-5" />
-                  Сургалтуудыг үзэх
+                  Сургалтууд
                 </Link>
               </Button>
               <Button variant="heroOutline" size="xl" asChild>
-                <Link to="/auth?mode=register">
-                  Үнэгүй бүртгүүлэх
-                </Link>
+                <Link to="/auth?mode=register">Бүртгүүлэх</Link>
               </Button>
             </div>
 
@@ -57,11 +55,7 @@ const HeroSection = () => {
 
           {/* Hero Image */}
           <div className="hidden lg:block relative animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-            <img
-              src={heroLearning}
-              alt="Онлайн сургалт"
-              className="w-full max-w-lg mx-auto drop-shadow-2xl"
-            />
+            <img src={heroLearning} alt="Онлайн сургалт" className="w-full max-w-lg mx-auto drop-shadow-2xl" />
           </div>
         </div>
       </div>
