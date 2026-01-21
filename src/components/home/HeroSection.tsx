@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Play, BookOpen, Users, Award } from "lucide-react";
+import { Play } from "lucide-react";
+import heroLearning from "@/assets/hero-learning.png";
 
 const HeroSection = () => {
   return (
@@ -54,68 +55,13 @@ const HeroSection = () => {
             </div>
           </div>
 
-          {/* Illustration */}
+          {/* Hero Image */}
           <div className="hidden lg:block relative animate-fade-in-up" style={{ animationDelay: "0.2s" }}>
-            <div className="relative">
-              {/* Main card */}
-              <div className="bg-background/10 backdrop-blur-lg rounded-2xl p-8 border border-primary-foreground/20">
-                <div className="flex items-center gap-4 mb-6">
-                  <div className="h-12 w-12 rounded-full bg-accent flex items-center justify-center">
-                    <BookOpen className="h-6 w-6 text-accent-foreground" />
-                  </div>
-                  <div>
-                    <div className="text-primary-foreground font-semibold">Шинэ хичээл</div>
-                    <div className="text-primary-foreground/70 text-sm">React & TypeScript</div>
-                  </div>
-                </div>
-
-                {/* Progress bars */}
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-primary-foreground/70">JavaScript</span>
-                      <span className="text-accent">85%</span>
-                    </div>
-                    <div className="h-2 bg-primary-foreground/20 rounded-full">
-                      <div className="h-full w-[85%] bg-accent rounded-full" />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-primary-foreground/70">React</span>
-                      <span className="text-accent">70%</span>
-                    </div>
-                    <div className="h-2 bg-primary-foreground/20 rounded-full">
-                      <div className="h-full w-[70%] bg-accent rounded-full" />
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between text-sm mb-1">
-                      <span className="text-primary-foreground/70">TypeScript</span>
-                      <span className="text-accent">60%</span>
-                    </div>
-                    <div className="h-2 bg-primary-foreground/20 rounded-full">
-                      <div className="h-full w-[60%] bg-accent rounded-full" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Floating cards */}
-              <div className="absolute -top-4 -right-4 bg-accent text-accent-foreground rounded-lg px-4 py-2 shadow-lg animate-float">
-                <div className="flex items-center gap-2">
-                  <Award className="h-5 w-5" />
-                  <span className="font-semibold">Сертификат</span>
-                </div>
-              </div>
-
-              <div className="absolute -bottom-4 -left-4 bg-background rounded-lg px-4 py-2 shadow-lg animate-float" style={{ animationDelay: "1s" }}>
-                <div className="flex items-center gap-2">
-                  <Users className="h-5 w-5 text-primary" />
-                  <span className="font-semibold text-foreground">+24 шинэ суралцагч</span>
-                </div>
-              </div>
-            </div>
+            <img
+              src={heroLearning}
+              alt="Онлайн сургалт"
+              className="w-full max-w-lg mx-auto drop-shadow-2xl"
+            />
           </div>
         </div>
       </div>
