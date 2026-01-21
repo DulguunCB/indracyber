@@ -22,9 +22,9 @@ const levelLabels: Record<string, string> = {
 };
 
 const categoryLabels: Record<string, string> = {
-  web: "Веб хөгжүүлэлт",
+  ielts: "IELTS",
   programming: "Програмчлал",
-  ai: "AI сургалт",
+  sat: "SAT",
 };
 
 const CourseCard = ({

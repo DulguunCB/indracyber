@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { ArrowLeft, Save, Trash2, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Trash2, Loader2, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,9 +23,23 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ImageUpload from "@/components/admin/ImageUpload";
+
+// Default categories
+const DEFAULT_CATEGORIES = [
+  { id: "ielts", label: "IELTS" },
+  { id: "programming", label: "Програмчлал" },
+  { id: "sat", label: "SAT" },
+];
 
 interface Instructor {
   id: string;
@@ -68,10 +82,15 @@ const AdminCourseForm = () => {
   const [deleting, setDeleting] = useState(false);
   const [formData, setFormData] = useState<CourseFormData>(initialFormData);
   const [instructors, setInstructors] = useState<Instructor[]>([]);
+  const [categories, setCategories] = useState(DEFAULT_CATEGORIES);
+  const [newCategoryId, setNewCategoryId] = useState("");
+  const [newCategoryLabel, setNewCategoryLabel] = useState("");
+  const [showAddCategory, setShowAddCategory] = useState(false);
 
   useEffect(() => {
     checkAdminAccess();
     fetchInstructors();
+    fetchCategories();
   }, []);
 
   useEffect(() => {
@@ -88,6 +107,46 @@ const AdminCourseForm = () => {
       .select("id, name")
       .order("name");
     setInstructors(data || []);
+  };
+
+  const fetchCategories = async () => {
+    // Fetch unique categories from existing courses
+    const { data } = await supabase
+      .from("courses")
+      .select("category");
+    
+    if (data) {
+      const uniqueCategories = [...new Set(data.map(c => c.category))];
+      const existingIds = DEFAULT_CATEGORIES.map(c => c.id);
+      
+      // Add any categories from database that aren't in defaults
+      const additionalCategories = uniqueCategories
+        .filter(cat => !existingIds.includes(cat))
+        .map(cat => ({ id: cat, label: cat }));
+      
+      setCategories([...DEFAULT_CATEGORIES, ...additionalCategories]);
+    }
+  };
+
+  const handleAddCategory = () => {
+    if (!newCategoryId.trim() || !newCategoryLabel.trim()) {
+      toast.error("Ангиллын ID болон нэр оруулна уу");
+      return;
+    }
+    
+    const categoryId = newCategoryId.toLowerCase().replace(/\s+/g, "_");
+    
+    if (categories.some(c => c.id === categoryId)) {
+      toast.error("Энэ ID-тай ангилал аль хэдийн байна");
+      return;
+    }
+    
+    setCategories([...categories, { id: categoryId, label: newCategoryLabel }]);
+    handleChange("category", categoryId);
+    setNewCategoryId("");
+    setNewCategoryLabel("");
+    setShowAddCategory(false);
+    toast.success("Шинэ ангилал нэмэгдлээ");
   };
 
   const checkAdminAccess = async () => {
@@ -327,7 +386,45 @@ const AdminCourseForm = () => {
 
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="category">Ангилал</Label>
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="category">Ангилал</Label>
+                  <Dialog open={showAddCategory} onOpenChange={setShowAddCategory}>
+                    <DialogTrigger asChild>
+                      <Button type="button" variant="ghost" size="sm" className="h-7 text-xs">
+                        <Plus className="h-3 w-3 mr-1" />
+                        Шинэ ангилал
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Шинэ ангилал нэмэх</DialogTitle>
+                      </DialogHeader>
+                      <div className="space-y-4 pt-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="newCategoryId">Ангиллын ID (англиар)</Label>
+                          <Input
+                            id="newCategoryId"
+                            value={newCategoryId}
+                            onChange={(e) => setNewCategoryId(e.target.value)}
+                            placeholder="Жишээ: toefl"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="newCategoryLabel">Ангиллын нэр</Label>
+                          <Input
+                            id="newCategoryLabel"
+                            value={newCategoryLabel}
+                            onChange={(e) => setNewCategoryLabel(e.target.value)}
+                            placeholder="Жишээ: TOEFL"
+                          />
+                        </div>
+                        <Button onClick={handleAddCategory} className="w-full">
+                          Нэмэх
+                        </Button>
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                </div>
                 <Select
                   value={formData.category}
                   onValueChange={(value) => handleChange("category", value)}
@@ -336,11 +433,11 @@ const AdminCourseForm = () => {
                     <SelectValue placeholder="Ангилал сонгоно уу" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="programming">Програмчлал</SelectItem>
-                    <SelectItem value="web">Веб хөгжүүлэлт</SelectItem>
-                    <SelectItem value="ai">AI сургалт</SelectItem>
-                    <SelectItem value="design">Дизайн</SelectItem>
-                    <SelectItem value="business">Бизнес</SelectItem>
+                    {categories.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.label}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
