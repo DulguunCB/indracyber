@@ -62,6 +62,11 @@ const categoryLabels: Record<string, string> = {
   ai: "AI сургалт",
 };
 
+// Generate unique 4-digit code for bank transfer
+const generateTransferCode = (): string => {
+  return Math.floor(1000 + Math.random() * 9000).toString();
+};
+
 const CourseDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -73,6 +78,7 @@ const CourseDetail = () => {
   const [hasPendingPurchase, setHasPendingPurchase] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
   const [showBankDialog, setShowBankDialog] = useState(false);
+  const [transferCode, setTransferCode] = useState("");
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -172,6 +178,8 @@ const CourseDetail = () => {
       navigate("/auth");
       return;
     }
+    // Generate new 4-digit code each time dialog opens
+    setTransferCode(generateTransferCode());
     setShowBankDialog(true);
   };
 
@@ -444,6 +452,7 @@ const CourseDetail = () => {
           onOpenChange={setShowBankDialog}
           courseTitle={course.title}
           price={Number(course.price)}
+          transferCode={transferCode}
           onSubmit={handleSubmitBankTransfer}
           isSubmitting={purchasing}
         />
