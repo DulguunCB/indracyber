@@ -10,7 +10,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-2">
-              <img src={logo} alt="INDRA Cyber Academy" className="h-16 w-auto brightness-0 invert" />
+              <img src={logo} alt="INDRA Cyber Academy" className="h-20 w-auto brightness-0 invert" />
             </Link>
             <p className="text-primary-foreground/70 text-sm">
               Монголын тэргүүлэх онлайн сургалтын платформ. Мэргэжлийн багш нартай хамтран чанартай боловсролыг танд хүргэнэ.
