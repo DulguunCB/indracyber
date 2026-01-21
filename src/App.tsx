@@ -17,6 +17,8 @@ import AdminInstructors from "./pages/AdminInstructors";
 import AdminPayments from "./pages/AdminPayments";
 import AdminSettings from "./pages/AdminSettings";
 import AdminPromoCodes from "./pages/AdminPromoCodes";
+import AdminUserProgress from "./pages/AdminUserProgress";
+import AdminCourseRevenue from "./pages/AdminCourseRevenue";
 import Contact from "./pages/Contact";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
@@ -44,6 +46,8 @@ const App = () => (
           <Route path="/admin/instructors" element={<AdminInstructors />} />
           <Route path="/admin/payments" element={<AdminPayments />} />
           <Route path="/admin/promo-codes" element={<AdminPromoCodes />} />
+          <Route path="/admin/user-progress" element={<AdminUserProgress />} />
+          <Route path="/admin/course-revenue" element={<AdminCourseRevenue />} />
           <Route path="/admin/settings" element={<AdminSettings />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/profile" element={<Profile />} />

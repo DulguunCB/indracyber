@@ -17,6 +17,8 @@ import {
   Video,
   Tag,
   BookOpen,
+  Eye,
+  TrendingUp,
 } from "lucide-react";
 import logo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
@@ -301,6 +303,20 @@ const Admin = () => {
           >
             <GraduationCap className="h-5 w-5" />
             Сургалтууд
+          </Link>
+          <Link
+            to="/admin/user-progress"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-sidebar-accent transition-colors"
+          >
+            <Eye className="h-5 w-5" />
+            Хэрэглэгчийн явц
+          </Link>
+          <Link
+            to="/admin/course-revenue"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-sidebar-accent transition-colors"
+          >
+            <TrendingUp className="h-5 w-5" />
+            Орлогын тайлан
           </Link>
           <Link
             to="/admin/payments"
