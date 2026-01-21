@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Camera, Loader2, Save, User } from "lucide-react";
+import { ArrowLeft, Camera, Loader2, Save, User, Lock, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -16,6 +16,7 @@ const Profile = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [savingPassword, setSavingPassword] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [profile, setProfile] = useState<{
@@ -27,6 +28,13 @@ const Profile = () => {
   });
   const [email, setEmail] = useState("");
   const [newEmail, setNewEmail] = useState("");
+  
+  // Password change state
+  const [showPasswordSection, setShowPasswordSection] = useState(false);
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   useEffect(() => {
     const fetchProfile = async () => {
@@ -156,6 +164,42 @@ const Profile = () => {
     }
   };
 
+  const handleChangePassword = async () => {
+    if (!newPassword || !confirmPassword) {
+      toast.error("Бүх талбарыг бөглөнө үү");
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      toast.error("Нууц үг 6-с дээш тэмдэгт байх ёстой");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("Нууц үг таарахгүй байна");
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      const { error } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (error) throw error;
+
+      toast.success("Нууц үг амжилттай солигдлоо");
+      setNewPassword("");
+      setConfirmPassword("");
+      setShowPasswordSection(false);
+    } catch (error: any) {
+      console.error("Error changing password:", error);
+      toast.error(error.message || "Нууц үг солиход алдаа гарлаа");
+    } finally {
+      setSavingPassword(false);
+    }
+  };
+
   const getInitials = (name: string) => {
     return name
       .split(" ")
@@ -271,6 +315,101 @@ const Profile = () => {
               )}
               Хадгалах
             </Button>
+          </CardContent>
+        </Card>
+
+        {/* Password Change Card */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5" />
+              Нууц үг солих
+            </CardTitle>
+            <CardDescription>
+              Аккаунтын нууц үгээ өөрчлөх
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {!showPasswordSection ? (
+              <Button
+                variant="outline"
+                onClick={() => setShowPasswordSection(true)}
+                className="w-full"
+              >
+                <Lock className="h-4 w-4 mr-2" />
+                Нууц үг солих
+              </Button>
+            ) : (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="newPassword">Шинэ нууц үг</Label>
+                  <div className="relative">
+                    <Input
+                      id="newPassword"
+                      type={showNewPassword ? "text" : "password"}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="confirmPassword">Нууц үг давтах</Label>
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? "text" : "password"}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      placeholder="••••••••"
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowPasswordSection(false);
+                      setNewPassword("");
+                      setConfirmPassword("");
+                    }}
+                    className="flex-1"
+                  >
+                    Цуцлах
+                  </Button>
+                  <Button
+                    onClick={handleChangePassword}
+                    disabled={savingPassword}
+                    className="flex-1"
+                  >
+                    {savingPassword ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : (
+                      <Lock className="h-4 w-4 mr-2" />
+                    )}
+                    Хадгалах
+                  </Button>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
