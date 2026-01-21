@@ -365,14 +365,14 @@ const AdminCourseForm = () => {
               <div className="space-y-2">
                 <Label htmlFor="instructor">Багш</Label>
                 <Select
-                  value={formData.instructor_id}
-                  onValueChange={(value) => handleChange("instructor_id", value)}
+                  value={formData.instructor_id || "none"}
+                  onValueChange={(value) => handleChange("instructor_id", value === "none" ? "" : value)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Багш сонгоно уу" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Сонгоогүй</SelectItem>
+                    <SelectItem value="none">Сонгоогүй</SelectItem>
                     {instructors.map((instructor) => (
                       <SelectItem key={instructor.id} value={instructor.id}>
                         {instructor.name}
