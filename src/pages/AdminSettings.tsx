@@ -16,13 +16,13 @@ const AdminSettings = () => {
 
   // Site settings state
   const [settings, setSettings] = useState({
-    siteName: "EduMongol",
-    siteDescription: "Монголын #1 онлайн сургалтын платформ",
-    contactEmail: "info@edumongol.mn",
+    siteName: "INDRA Cyber Academy",
+    siteDescription: "Монголын тэргүүлэх кибер аюулгүй байдлын сургалтын платформ",
+    contactEmail: "info@indracyber.mn",
     contactPhone: "+976 9999 9999",
     bankName: "Хаан банк",
     bankAccount: "5000123456",
-    bankAccountName: "EduMongol ХХК",
+    bankAccountName: "INDRA Cyber Academy ХХК",
     maintenanceMode: false,
     allowRegistration: true,
   });
