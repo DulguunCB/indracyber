@@ -16,6 +16,7 @@ import {
   Clock,
   Trash2,
   Video,
+  Tag,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -314,6 +315,13 @@ const Admin = () => {
                 {stats.pendingPurchases}
               </Badge>
             )}
+          </Link>
+          <Link
+            to="/admin/promo-codes"
+            className="flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-sidebar-accent transition-colors"
+          >
+            <Tag className="h-5 w-5" />
+            Promo кодууд
           </Link>
           <Link
             to="/admin/instructors"

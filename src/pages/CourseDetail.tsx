@@ -210,7 +210,18 @@ const CourseDetail = () => {
       } else {
         // Update promo code usage count if used
         if (promoCodeId) {
-          await supabase.rpc("increment_promo_usage", { promo_id: promoCodeId });
+          const { data: promoData } = await supabase
+            .from("promo_codes")
+            .select("used_count")
+            .eq("id", promoCodeId)
+            .single();
+          
+          if (promoData) {
+            await supabase
+              .from("promo_codes")
+              .update({ used_count: (promoData.used_count || 0) + 1 })
+              .eq("id", promoCodeId);
+          }
         }
 
         if (isFree) {
