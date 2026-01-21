@@ -1,0 +1,414 @@
+import { useState, useEffect } from "react";
+import { useParams, Link, useNavigate } from "react-router-dom";
+import {
+  Clock,
+  BookOpen,
+  User,
+  Award,
+  PlayCircle,
+  Lock,
+  CheckCircle,
+  ShoppingCart,
+  ArrowLeft,
+} from "lucide-react";
+import Layout from "@/components/layout/Layout";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { User as SupabaseUser } from "@supabase/supabase-js";
+
+interface Course {
+  id: string;
+  title: string;
+  description: string | null;
+  short_description: string | null;
+  price: number;
+  thumbnail_url: string | null;
+  duration_hours: number | null;
+  lessons_count: number | null;
+  level: string | null;
+  category: string;
+  instructors: {
+    id: string;
+    name: string;
+    bio: string | null;
+    avatar_url: string | null;
+    expertise: string[] | null;
+  } | null;
+}
+
+interface Lesson {
+  id: string;
+  title: string;
+  description: string | null;
+  duration_minutes: number | null;
+  order_index: number;
+  is_preview: boolean;
+}
+
+const levelLabels: Record<string, string> = {
+  beginner: "Анхан шат",
+  intermediate: "Дунд шат",
+  advanced: "Ахисан шат",
+};
+
+const categoryLabels: Record<string, string> = {
+  web: "Веб хөгжүүлэлт",
+  programming: "Програмчлал",
+  ai: "AI сургалт",
+};
+
+const CourseDetail = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const [course, setCourse] = useState<Course | null>(null);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<SupabaseUser | null>(null);
+  const [hasPurchased, setHasPurchased] = useState(false);
+  const [purchasing, setPurchasing] = useState(false);
+
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user ?? null);
+      }
+    );
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    if (id) {
+      fetchCourse();
+      fetchLessons();
+    }
+  }, [id]);
+
+  useEffect(() => {
+    if (user && id) {
+      checkPurchase();
+    }
+  }, [user, id]);
+
+  const fetchCourse = async () => {
+    const { data, error } = await supabase
+      .from("courses")
+      .select(`
+        id,
+        title,
+        description,
+        short_description,
+        price,
+        thumbnail_url,
+        duration_hours,
+        lessons_count,
+        level,
+        category,
+        instructors (id, name, bio, avatar_url, expertise)
+      `)
+      .eq("id", id)
+      .eq("is_published", true)
+      .single();
+
+    if (error) {
+      console.error("Error fetching course:", error);
+      navigate("/courses");
+    } else {
+      setCourse(data);
+    }
+    setLoading(false);
+  };
+
+  const fetchLessons = async () => {
+    const { data, error } = await supabase
+      .from("lessons")
+      .select("id, title, description, duration_minutes, order_index, is_preview")
+      .eq("course_id", id)
+      .order("order_index", { ascending: true });
+
+    if (error) {
+      console.error("Error fetching lessons:", error);
+    } else {
+      setLessons(data || []);
+    }
+  };
+
+  const checkPurchase = async () => {
+    const { data } = await supabase
+      .from("purchases")
+      .select("id")
+      .eq("user_id", user?.id)
+      .eq("course_id", id)
+      .single();
+
+    setHasPurchased(!!data);
+  };
+
+  const handlePurchase = async () => {
+    if (!user) {
+      toast.error("Худалдан авахын тулд нэвтэрнэ үү");
+      navigate("/auth");
+      return;
+    }
+
+    if (!course) return;
+
+    setPurchasing(true);
+
+    // For now, we'll simulate a purchase with Stripe/Gumroad link
+    // In production, this would redirect to Stripe checkout
+    try {
+      const { error } = await supabase.from("purchases").insert({
+        user_id: user.id,
+        course_id: course.id,
+        amount: Number(course.price),
+        payment_method: "stripe",
+        status: "completed",
+      });
+
+      if (error) {
+        if (error.code === "23505") {
+          toast.error("Та энэ сургалтыг аль хэдийн худалдаж авсан байна");
+        } else {
+          throw error;
+        }
+      } else {
+        toast.success("Амжилттай худалдаж авлаа!");
+        setHasPurchased(true);
+      }
+    } catch (error) {
+      toast.error("Алдаа гарлаа. Дахин оролдоно уу.");
+    } finally {
+      setPurchasing(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <Layout>
+        <div className="container py-8">
+          <Skeleton className="h-8 w-32 mb-6" />
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-6">
+              <Skeleton className="aspect-video rounded-xl" />
+              <Skeleton className="h-10 w-3/4" />
+              <Skeleton className="h-24 w-full" />
+            </div>
+            <div>
+              <Skeleton className="h-64 rounded-xl" />
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
+  if (!course) {
+    return (
+      <Layout>
+        <div className="container py-16 text-center">
+          <h1 className="text-2xl font-bold mb-4">Сургалт олдсонгүй</h1>
+          <Button asChild>
+            <Link to="/courses">Сургалтууд руу буцах</Link>
+          </Button>
+        </div>
+      </Layout>
+    );
+  }
+
+  return (
+    <Layout>
+      <div className="bg-primary py-8">
+        <div className="container">
+          <Link
+            to="/courses"
+            className="inline-flex items-center gap-2 text-primary-foreground/70 hover:text-primary-foreground mb-4"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            Сургалтууд руу буцах
+          </Link>
+          <div className="flex flex-wrap gap-2 mb-4">
+            <Badge className="bg-accent text-accent-foreground">
+              {categoryLabels[course.category] || course.category}
+            </Badge>
+            <Badge variant="secondary">
+              {levelLabels[course.level || "beginner"]}
+            </Badge>
+          </div>
+          <h1 className="text-3xl md:text-4xl font-bold text-primary-foreground">
+            {course.title}
+          </h1>
+        </div>
+      </div>
+
+      <div className="container py-8">
+        <div className="grid lg:grid-cols-3 gap-8">
+          {/* Main Content */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Video Thumbnail */}
+            <div className="aspect-video rounded-xl overflow-hidden bg-muted">
+              {course.thumbnail_url ? (
+                <img
+                  src={course.thumbnail_url}
+                  alt={course.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20">
+                  <PlayCircle className="h-20 w-20 text-primary/40" />
+                </div>
+              )}
+            </div>
+
+            {/* Description */}
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Сургалтын тухай</h2>
+              <p className="text-muted-foreground whitespace-pre-wrap">
+                {course.description || course.short_description || "Тайлбар байхгүй"}
+              </p>
+            </div>
+
+            {/* Instructor */}
+            {course.instructors && (
+              <div className="bg-card rounded-xl p-6 shadow-card">
+                <h2 className="text-xl font-bold mb-4">Багш</h2>
+                <div className="flex items-start gap-4">
+                  <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                    {course.instructors.avatar_url ? (
+                      <img
+                        src={course.instructors.avatar_url}
+                        alt={course.instructors.name}
+                        className="h-16 w-16 rounded-full object-cover"
+                      />
+                    ) : (
+                      <User className="h-8 w-8 text-primary" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-lg">
+                      {course.instructors.name}
+                    </h3>
+                    {course.instructors.expertise && (
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {course.instructors.expertise.map((exp) => (
+                          <Badge key={exp} variant="secondary" className="text-xs">
+                            {exp}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                    {course.instructors.bio && (
+                      <p className="text-muted-foreground mt-2">
+                        {course.instructors.bio}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Lessons List */}
+            <div>
+              <h2 className="text-2xl font-bold mb-4">Хичээлүүд</h2>
+              <div className="space-y-2">
+                {lessons.length > 0 ? (
+                  lessons.map((lesson, index) => (
+                    <div
+                      key={lesson.id}
+                      className="flex items-center gap-4 p-4 bg-card rounded-lg shadow-sm"
+                    >
+                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+                        {index + 1}
+                      </div>
+                      <div className="flex-1">
+                        <h4 className="font-medium">{lesson.title}</h4>
+                        {lesson.duration_minutes && (
+                          <span className="text-sm text-muted-foreground">
+                            {lesson.duration_minutes} минут
+                          </span>
+                        )}
+                      </div>
+                      {lesson.is_preview ? (
+                        <Badge variant="secondary" className="gap-1">
+                          <PlayCircle className="h-3 w-3" />
+                          Үзэх
+                        </Badge>
+                      ) : hasPurchased ? (
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                      ) : (
+                        <Lock className="h-5 w-5 text-muted-foreground" />
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-muted-foreground text-center py-8">
+                    Хичээл байхгүй байна
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-24 bg-card rounded-xl p-6 shadow-card space-y-6">
+              <div className="text-center">
+                <div className="text-4xl font-bold text-primary mb-2">
+                  {Number(course.price).toLocaleString()}₮
+                </div>
+              </div>
+
+              {hasPurchased ? (
+                <Button size="lg" className="w-full" asChild>
+                  <Link to={`/dashboard/courses/${course.id}`}>
+                    <PlayCircle className="h-5 w-5 mr-2" />
+                    Хичээл үзэх
+                  </Link>
+                </Button>
+              ) : (
+                <Button
+                  variant="hero"
+                  size="lg"
+                  className="w-full"
+                  onClick={handlePurchase}
+                  disabled={purchasing}
+                >
+                  <ShoppingCart className="h-5 w-5 mr-2" />
+                  {purchasing ? "Боловсруулж байна..." : "Худалдан авах"}
+                </Button>
+              )}
+
+              <div className="space-y-4 pt-4 border-t border-border">
+                <div className="flex items-center gap-3">
+                  <Clock className="h-5 w-5 text-primary" />
+                  <span>{course.duration_hours || 0} цаг видео</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                  <span>{course.lessons_count || lessons.length} хичээл</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Award className="h-5 w-5 text-primary" />
+                  <span>Сертификат олгоно</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <CheckCircle className="h-5 w-5 text-primary" />
+                  <span>Насан туршид хандах эрхтэй</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Layout>
+  );
+};
+
+export default CourseDetail;
