@@ -62,116 +62,68 @@ const BankTransferDialog = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+      <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+        <DialogHeader className="pb-2">
           <DialogTitle className="flex items-center gap-2">
             <Building2 className="h-5 w-5 text-primary" />
             Дансаар шилжүүлэх
           </DialogTitle>
-          <DialogDescription>
-            Доорх дансруу төлбөрөө шилжүүлээд, гүйлгээний дугаараа оруулна уу.
-          </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
-          {/* Course Info */}
-          <div className="bg-muted rounded-lg p-4">
-            <p className="text-sm text-muted-foreground">Сургалт</p>
-            <p className="font-medium">{courseTitle}</p>
-            <p className="text-2xl font-bold text-primary mt-2">
+        <div className="space-y-3">
+          {/* Course Info - Compact */}
+          <div className="bg-muted rounded-lg p-3 flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground">Сургалт</p>
+              <p className="font-medium text-sm line-clamp-1">{courseTitle}</p>
+            </div>
+            <p className="text-xl font-bold text-primary">
               {price.toLocaleString()}₮
             </p>
           </div>
 
-          {/* Bank Details */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between p-3 bg-card border rounded-lg">
-              <div>
-                <p className="text-xs text-muted-foreground">Банк</p>
-                <p className="font-medium">{BANK_DETAILS.bankName}</p>
-              </div>
+          {/* Bank Details - Compact Grid */}
+          <div className="grid grid-cols-2 gap-2">
+            <div className="p-2 bg-card border rounded-lg">
+              <p className="text-xs text-muted-foreground">Банк</p>
+              <p className="font-medium text-sm">{BANK_DETAILS.bankName}</p>
             </div>
-
-            <div className="flex items-center justify-between p-3 bg-card border rounded-lg">
+            <div className="p-2 bg-card border rounded-lg flex items-center justify-between">
               <div>
                 <p className="text-xs text-muted-foreground">Дансны дугаар</p>
-                <p className="font-medium font-mono">{BANK_DETAILS.accountNumber}</p>
+                <p className="font-medium text-sm font-mono">{BANK_DETAILS.accountNumber}</p>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => copyToClipboard(BANK_DETAILS.accountNumber, "account")}
-              >
-                {copiedField === "account" ? (
-                  <Check className="h-4 w-4 text-green-500" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
+              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(BANK_DETAILS.accountNumber, "account")}>
+                {copiedField === "account" ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
               </Button>
             </div>
+          </div>
 
-            <div className="flex items-center justify-between p-3 bg-card border rounded-lg">
-              <div>
-                <p className="text-xs text-muted-foreground">Дансны нэр</p>
-                <p className="font-medium">{BANK_DETAILS.accountName}</p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => copyToClipboard(BANK_DETAILS.accountName, "name")}
-              >
-                {copiedField === "name" ? (
-                  <Check className="h-4 w-4 text-green-500" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
+          <div className="p-2 bg-card border rounded-lg flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground">Дансны нэр</p>
+              <p className="font-medium text-sm">{BANK_DETAILS.accountName}</p>
             </div>
+            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(BANK_DETAILS.accountName, "name")}>
+              {copiedField === "name" ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
+            </Button>
+          </div>
 
-            <div className="flex items-center justify-between p-3 bg-card border rounded-lg">
-              <div>
-                <p className="text-xs text-muted-foreground">Шилжүүлэх дүн</p>
-                <p className="font-medium text-primary">{price.toLocaleString()}₮</p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => copyToClipboard(price.toString(), "amount")}
-              >
-                {copiedField === "amount" ? (
-                  <Check className="h-4 w-4 text-green-500" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
+          {/* Transfer Code - Highlighted */}
+          <div className="p-3 bg-primary/10 border-2 border-primary rounded-lg flex items-center justify-between">
+            <div>
+              <p className="text-xs text-muted-foreground">Гүйлгээний утга (заавал бичнэ!)</p>
+              <p className="font-bold text-2xl text-primary font-mono">{transferCode}</p>
             </div>
-
-            <div className="flex items-center justify-between p-3 bg-primary/10 border-2 border-primary rounded-lg">
-              <div>
-                <p className="text-xs text-muted-foreground">Гүйлгээний утга (заавал бичнэ)</p>
-                <p className="font-bold text-xl text-primary font-mono">{transferCode}</p>
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => copyToClipboard(transferCode, "code")}
-              >
-                {copiedField === "code" ? (
-                  <Check className="h-4 w-4 text-green-500" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-            <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-              ⚠️ Гүйлгээний утга дээр дээрх кодыг заавал бичнэ үү!
-            </p>
+            <Button variant="ghost" size="icon" onClick={() => copyToClipboard(transferCode, "code")}>
+              {copiedField === "code" ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+            </Button>
           </div>
 
           {/* Transaction ID Input */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="transactionId">Гүйлгээний дугаар / Лавлах дугаар</Label>
+          <form onSubmit={handleSubmit} className="space-y-3">
+            <div className="space-y-1">
+              <Label htmlFor="transactionId" className="text-sm">Гүйлгээний дугаар</Label>
               <Input
                 id="transactionId"
                 placeholder="Жишээ: 123456789"
@@ -179,15 +131,11 @@ const BankTransferDialog = ({
                 onChange={(e) => setTransactionId(e.target.value)}
               />
               <p className="text-xs text-muted-foreground">
-                Шилжүүлэг хийсний дараа гүйлгээний дугаараа оруулна уу. Бид баталгаажуулсны дараа таны хандах эрх нээгдэнэ.
+                Шилжүүлэг хийсний дараа гүйлгээний дугаараа оруулна уу.
               </p>
             </div>
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isSubmitting || !transactionId.trim()}
-            >
+            <Button type="submit" className="w-full" disabled={isSubmitting || !transactionId.trim()}>
               {isSubmitting ? "Илгээж байна..." : "Баталгаажуулах хүсэлт илгээх"}
             </Button>
           </form>
