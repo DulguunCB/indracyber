@@ -26,9 +26,9 @@ interface Course {
 
 const categories = [
   { id: "all", label: "Бүгд" },
-  { id: "web", label: "Веб хөгжүүлэлт" },
+  { id: "ielts", label: "IELTS" },
   { id: "programming", label: "Програмчлал" },
-  { id: "ai", label: "AI сургалт" },
+  { id: "sat", label: "SAT" },
 ];
 
 const levels = [
