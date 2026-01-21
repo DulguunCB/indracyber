@@ -100,7 +100,7 @@ const CourseCard = ({
             {price.toLocaleString()}₮
           </span>
           <span className="text-sm font-medium text-accent group-hover:underline">
-            Дэлгэрэнгүй →
+            Худалдаж авах →
           </span>
         </div>
       </div>
