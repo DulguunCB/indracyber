@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import ImageUpload from "@/components/admin/ImageUpload";
 
 interface CourseFormData {
   title: string;
@@ -367,13 +368,10 @@ const AdminCourseForm = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="thumbnail_url">Зургийн URL</Label>
-              <Input
-                id="thumbnail_url"
-                type="url"
+              <Label>Сургалтын зураг</Label>
+              <ImageUpload
                 value={formData.thumbnail_url}
-                onChange={(e) => handleChange("thumbnail_url", e.target.value)}
-                placeholder="https://example.com/image.jpg"
+                onChange={(url) => handleChange("thumbnail_url", url)}
               />
             </div>
           </div>
