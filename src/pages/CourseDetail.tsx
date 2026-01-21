@@ -177,19 +177,28 @@ const CourseDetail = () => {
     setShowBankDialog(true);
   };
 
-  const handleSubmitBankTransfer = async (transactionId: string) => {
+  const handleSubmitBankTransfer = async (
+    transactionId: string, 
+    promoCodeId: string | null, 
+    finalAmount: number, 
+    isFree: boolean
+  ) => {
     if (!user || !course) return;
 
     setPurchasing(true);
 
     try {
+      // If 100% discount (free), auto-complete the purchase
+      const status = isFree ? "completed" : "pending";
+
       const { error } = await supabase.from("purchases").insert({
         user_id: user.id,
         course_id: course.id,
-        amount: Number(course.price),
-        payment_method: "bank_transfer",
+        amount: finalAmount,
+        payment_method: isFree ? "promo_code" : "bank_transfer",
         payment_id: transactionId,
-        status: "pending",
+        status,
+        promo_code_id: promoCodeId,
       });
 
       if (error) {
@@ -199,8 +208,18 @@ const CourseDetail = () => {
           throw error;
         }
       } else {
-        toast.success("Төлбөрийн хүсэлт амжилттай илгээгдлээ! Баталгаажуулсны дараа таны хандах эрх нээгдэнэ.");
-        setHasPendingPurchase(true);
+        // Update promo code usage count if used
+        if (promoCodeId) {
+          await supabase.rpc("increment_promo_usage", { promo_id: promoCodeId });
+        }
+
+        if (isFree) {
+          toast.success("Сургалт амжилттай нээгдлээ! Одоо үзэж эхлээрэй.");
+          setHasPurchased(true);
+        } else {
+          toast.success("Төлбөрийн хүсэлт амжилттай илгээгдлээ! Баталгаажуулсны дараа таны хандах эрх нээгдэнэ.");
+          setHasPendingPurchase(true);
+        }
         setShowBankDialog(false);
       }
     } catch (error) {
