@@ -8,8 +8,9 @@ import {
   PlayCircle,
   Lock,
   CheckCircle,
-  ShoppingCart,
+  Building2,
   ArrowLeft,
+  AlertCircle,
 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { User as SupabaseUser } from "@supabase/supabase-js";
+import BankTransferDialog from "@/components/courses/BankTransferDialog";
 
 interface Course {
   id: string;
@@ -68,7 +70,9 @@ const CourseDetail = () => {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const [hasPurchased, setHasPurchased] = useState(false);
+  const [hasPendingPurchase, setHasPendingPurchase] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
+  const [showBankDialog, setShowBankDialog] = useState(false);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -143,45 +147,59 @@ const CourseDetail = () => {
   const checkPurchase = async () => {
     const { data } = await supabase
       .from("purchases")
-      .select("id")
+      .select("id, status")
       .eq("user_id", user?.id)
       .eq("course_id", id)
-      .single();
+      .maybeSingle();
 
-    setHasPurchased(!!data);
+    if (data) {
+      if (data.status === "completed") {
+        setHasPurchased(true);
+        setHasPendingPurchase(false);
+      } else if (data.status === "pending") {
+        setHasPurchased(false);
+        setHasPendingPurchase(true);
+      }
+    } else {
+      setHasPurchased(false);
+      setHasPendingPurchase(false);
+    }
   };
 
-  const handlePurchase = async () => {
+  const handleBankTransfer = () => {
     if (!user) {
       toast.error("Худалдан авахын тулд нэвтэрнэ үү");
       navigate("/auth");
       return;
     }
+    setShowBankDialog(true);
+  };
 
-    if (!course) return;
+  const handleSubmitBankTransfer = async (transactionId: string) => {
+    if (!user || !course) return;
 
     setPurchasing(true);
 
-    // For now, we'll simulate a purchase with Stripe/Gumroad link
-    // In production, this would redirect to Stripe checkout
     try {
       const { error } = await supabase.from("purchases").insert({
         user_id: user.id,
         course_id: course.id,
         amount: Number(course.price),
-        payment_method: "stripe",
-        status: "completed",
+        payment_method: "bank_transfer",
+        payment_id: transactionId,
+        status: "pending",
       });
 
       if (error) {
         if (error.code === "23505") {
-          toast.error("Та энэ сургалтыг аль хэдийн худалдаж авсан байна");
+          toast.error("Та энэ сургалтын төлбөрийг аль хэдийн илгээсэн байна");
         } else {
           throw error;
         }
       } else {
-        toast.success("Амжилттай худалдаж авлаа!");
-        setHasPurchased(true);
+        toast.success("Төлбөрийн хүсэлт амжилттай илгээгдлээ! Баталгаажуулсны дараа таны хандах эрх нээгдэнэ.");
+        setHasPendingPurchase(true);
+        setShowBankDialog(false);
       }
     } catch (error) {
       toast.error("Алдаа гарлаа. Дахин оролдоно уу.");
@@ -372,16 +390,28 @@ const CourseDetail = () => {
                     Хичээл үзэх
                   </Link>
                 </Button>
+              ) : hasPendingPurchase ? (
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 p-3 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg">
+                    <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 flex-shrink-0" />
+                    <p className="text-sm text-amber-700 dark:text-amber-300">
+                      Таны төлбөр баталгаажуулалтын хүлээгдэж байна
+                    </p>
+                  </div>
+                  <Button size="lg" className="w-full" variant="outline" disabled>
+                    <Clock className="h-5 w-5 mr-2" />
+                    Хүлээгдэж байна
+                  </Button>
+                </div>
               ) : (
                 <Button
                   variant="hero"
                   size="lg"
                   className="w-full"
-                  onClick={handlePurchase}
-                  disabled={purchasing}
+                  onClick={handleBankTransfer}
                 >
-                  <ShoppingCart className="h-5 w-5 mr-2" />
-                  {purchasing ? "Боловсруулж байна..." : "Худалдан авах"}
+                  <Building2 className="h-5 w-5 mr-2" />
+                  Дансаар шилжүүлэх
                 </Button>
               )}
 
@@ -407,6 +437,17 @@ const CourseDetail = () => {
           </div>
         </div>
       </div>
+
+      {course && (
+        <BankTransferDialog
+          open={showBankDialog}
+          onOpenChange={setShowBankDialog}
+          courseTitle={course.title}
+          price={Number(course.price)}
+          onSubmit={handleSubmitBankTransfer}
+          isSubmitting={purchasing}
+        />
+      )}
     </Layout>
   );
 };
