@@ -16,10 +16,13 @@ interface BankTransferDialogProps {
   onOpenChange: (open: boolean) => void;
   courseTitle: string;
   price: number;
-  transferCode: string;
-  onSubmit: () => Promise<void>;
+  onSubmit: (transferCode: string) => Promise<void>;
   isSubmitting: boolean;
 }
+
+const generateTransferCode = () => {
+  return `EDU${Date.now().toString(36).toUpperCase()}`;
+};
 
 const BANK_DETAILS = {
   bankName: "Хаан Банк",
@@ -32,12 +35,12 @@ const BankTransferDialog = ({
   onOpenChange,
   courseTitle,
   price,
-  transferCode,
   onSubmit,
   isSubmitting,
 }: BankTransferDialogProps) => {
   const [confirmed, setConfirmed] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
+  const [transferCode] = useState(() => generateTransferCode());
 
   const copyToClipboard = async (text: string, field: string) => {
     try {
@@ -53,10 +56,10 @@ const BankTransferDialog = ({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!confirmed) {
-      toast.error("Төлбөр шилжүүлсэн гэдгээ баталгаажуулна уу");
+      toast.error("Төлбөр шилжүүлсэн гэдгээ баталгаажуулна у|");
       return;
     }
-    await onSubmit();
+    await onSubmit(transferCode);
     setConfirmed(false);
   };
 
