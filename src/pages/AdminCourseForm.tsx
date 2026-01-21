@@ -27,6 +27,11 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import ImageUpload from "@/components/admin/ImageUpload";
 
+interface Instructor {
+  id: string;
+  name: string;
+}
+
 interface CourseFormData {
   title: string;
   short_description: string;
@@ -37,6 +42,7 @@ interface CourseFormData {
   duration_hours: number;
   thumbnail_url: string;
   is_published: boolean;
+  instructor_id: string;
 }
 
 const initialFormData: CourseFormData = {
@@ -49,6 +55,7 @@ const initialFormData: CourseFormData = {
   duration_hours: 0,
   thumbnail_url: "",
   is_published: false,
+  instructor_id: "",
 };
 
 const AdminCourseForm = () => {
@@ -60,9 +67,11 @@ const AdminCourseForm = () => {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [formData, setFormData] = useState<CourseFormData>(initialFormData);
+  const [instructors, setInstructors] = useState<Instructor[]>([]);
 
   useEffect(() => {
     checkAdminAccess();
+    fetchInstructors();
   }, []);
 
   useEffect(() => {
@@ -72,6 +81,14 @@ const AdminCourseForm = () => {
       setLoading(false);
     }
   }, [id, isEditing]);
+
+  const fetchInstructors = async () => {
+    const { data } = await supabase
+      .from("instructors")
+      .select("id, name")
+      .order("name");
+    setInstructors(data || []);
+  };
 
   const checkAdminAccess = async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -116,6 +133,7 @@ const AdminCourseForm = () => {
       duration_hours: data.duration_hours || 0,
       thumbnail_url: data.thumbnail_url || "",
       is_published: data.is_published || false,
+      instructor_id: data.instructor_id || "",
     });
     setLoading(false);
   };
@@ -144,6 +162,7 @@ const AdminCourseForm = () => {
             duration_hours: formData.duration_hours,
             thumbnail_url: formData.thumbnail_url || null,
             is_published: formData.is_published,
+            instructor_id: formData.instructor_id || null,
           })
           .eq("id", id);
 
@@ -160,6 +179,7 @@ const AdminCourseForm = () => {
           duration_hours: formData.duration_hours,
           thumbnail_url: formData.thumbnail_url || null,
           is_published: formData.is_published,
+          instructor_id: formData.instructor_id || null,
         });
 
         if (error) throw error;
@@ -338,6 +358,26 @@ const AdminCourseForm = () => {
                     <SelectItem value="beginner">Анхан шат</SelectItem>
                     <SelectItem value="intermediate">Дунд шат</SelectItem>
                     <SelectItem value="advanced">Ахисан шат</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="instructor">Багш</Label>
+                <Select
+                  value={formData.instructor_id}
+                  onValueChange={(value) => handleChange("instructor_id", value)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Багш сонгоно уу" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Сонгоогүй</SelectItem>
+                    {instructors.map((instructor) => (
+                      <SelectItem key={instructor.id} value={instructor.id}>
+                        {instructor.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
