@@ -183,7 +183,7 @@ const CourseDetail = () => {
     setShowBankDialog(true);
   };
 
-  const handleSubmitBankTransfer = async (transactionId: string) => {
+  const handleSubmitBankTransfer = async () => {
     if (!user || !course) return;
 
     setPurchasing(true);
@@ -194,7 +194,7 @@ const CourseDetail = () => {
         course_id: course.id,
         amount: Number(course.price),
         payment_method: "bank_transfer",
-        payment_id: transactionId,
+        payment_id: transferCode,
         status: "pending",
       });
 
@@ -210,7 +210,7 @@ const CourseDetail = () => {
         setShowBankDialog(false);
       }
     } catch (error) {
-      toast.error("Алдаа гарлаа. Дахин оролдоно уу.");
+      toast.error("Алдаа гарлаа. Дахин оролдоно у|.");
     } finally {
       setPurchasing(false);
     }
