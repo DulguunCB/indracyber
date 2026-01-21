@@ -15,6 +15,7 @@ import {
   XCircle,
   Clock,
   Trash2,
+  Video,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -461,7 +462,12 @@ const Admin = () => {
                           </TableCell>
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
-                              <Button variant="ghost" size="icon" asChild>
+                              <Button variant="ghost" size="icon" asChild title="Хичээлүүд">
+                                <Link to={`/admin/courses/${course.id}/lessons`}>
+                                  <Video className="h-4 w-4" />
+                                </Link>
+                              </Button>
+                              <Button variant="ghost" size="icon" asChild title="Засах">
                                 <Link to={`/admin/courses/${course.id}/edit`}>
                                   <Pencil className="h-4 w-4" />
                                 </Link>
