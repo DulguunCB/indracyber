@@ -71,28 +71,22 @@ const Header = () => {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-6">
           <Link
+            to="/"
+            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
+          >
+            Нүүр хуудас
+          </Link>
+          <Link
             to="/courses"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
           >
-            Сургалтууд
+            Сургалт
           </Link>
           <Link
-            to="/courses?category=web"
+            to="/contact"
             className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
           >
-            Веб хөгжүүлэлт
-          </Link>
-          <Link
-            to="/courses?category=programming"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
-            Програмчлал
-          </Link>
-          <Link
-            to="/courses?category=ai"
-            className="text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-          >
-            AI сургалт
+            Холбоо барих
           </Link>
         </nav>
 
@@ -153,32 +147,25 @@ const Header = () => {
         <div className="md:hidden border-t border-border bg-background animate-fade-in">
           <nav className="container py-4 flex flex-col gap-3">
             <Link
+              to="/"
+              className="py-2 text-sm font-medium"
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Нүүр хуудас
+            </Link>
+            <Link
               to="/courses"
               className="py-2 text-sm font-medium"
               onClick={() => setIsMenuOpen(false)}
             >
-              Сургалтууд
+              Сургалт
             </Link>
             <Link
-              to="/courses?category=web"
+              to="/contact"
               className="py-2 text-sm font-medium"
               onClick={() => setIsMenuOpen(false)}
             >
-              Веб хөгжүүлэлт
-            </Link>
-            <Link
-              to="/courses?category=programming"
-              className="py-2 text-sm font-medium"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Програмчлал
-            </Link>
-            <Link
-              to="/courses?category=ai"
-              className="py-2 text-sm font-medium"
-              onClick={() => setIsMenuOpen(false)}
-            >
-              AI сургалт
+              Холбоо барих
             </Link>
             <div className="pt-3 border-t border-border flex flex-col gap-2">
               {user ? (
