@@ -21,7 +21,7 @@ interface BankTransferDialogProps {
 }
 
 const generateTransferCode = () => {
-  return `EDU${Date.now().toString(36).toUpperCase()}`;
+  return String(Math.floor(1000 + Math.random() * 9000));
 };
 
 const BANK_DETAILS = {
