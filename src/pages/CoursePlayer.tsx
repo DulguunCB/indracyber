@@ -98,14 +98,45 @@ const CoursePlayer = () => {
 
     if (lessonsData && lessonsData.length > 0) {
       setLessons(lessonsData);
-      setCurrentLesson(lessonsData[0]);
+      
+      // Check last watched lesson from progress
+      const { data: progressData } = await supabase
+        .from("lesson_progress")
+        .select("lesson_id")
+        .eq("user_id", user?.id)
+        .eq("course_id", courseId)
+        .order("last_watched_at", { ascending: false })
+        .limit(1)
+        .single();
+
+      if (progressData) {
+        const lastLesson = lessonsData.find(l => l.id === progressData.lesson_id);
+        setCurrentLesson(lastLesson || lessonsData[0]);
+      } else {
+        setCurrentLesson(lessonsData[0]);
+      }
     }
 
     setLoading(false);
   };
 
-  const handleLessonSelect = (lesson: Lesson) => {
+  const handleLessonSelect = async (lesson: Lesson) => {
     setCurrentLesson(lesson);
+    
+    // Save progress
+    if (user && courseId) {
+      await supabase
+        .from("lesson_progress")
+        .upsert({
+          user_id: user.id,
+          course_id: courseId,
+          lesson_id: lesson.id,
+          last_watched_at: new Date().toISOString(),
+        }, {
+          onConflict: "user_id,lesson_id"
+        });
+    }
+    
     // Close sidebar on mobile
     if (window.innerWidth < 1024) {
       setSidebarOpen(false);
