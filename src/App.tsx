@@ -10,6 +10,7 @@ import CourseDetail from "./pages/CourseDetail";
 import Dashboard from "./pages/Dashboard";
 import CoursePlayer from "./pages/CoursePlayer";
 import Admin from "./pages/Admin";
+import AdminCourses from "./pages/AdminCourses";
 import AdminCourseForm from "./pages/AdminCourseForm";
 import AdminCourseLessons from "./pages/AdminCourseLessons";
 import AdminInstructors from "./pages/AdminInstructors";
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/dashboard/courses/:courseId" element={<CoursePlayer />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/admin/courses" element={<AdminCourses />} />
           <Route path="/admin/courses/new" element={<AdminCourseForm />} />
           <Route path="/admin/courses/:id/edit" element={<AdminCourseForm />} />
           <Route path="/admin/courses/:courseId/lessons" element={<AdminCourseLessons />} />
