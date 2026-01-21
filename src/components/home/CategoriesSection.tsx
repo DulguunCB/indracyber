@@ -1,13 +1,13 @@
 import { Link } from "react-router-dom";
-import { Code, Globe, Brain, ArrowRight } from "lucide-react";
+import { Code, BookOpen, GraduationCap, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const categories = [
   {
-    id: "web",
-    icon: Globe,
-    title: "Веб хөгжүүлэлт",
-    description: "HTML, CSS, JavaScript, React, Node.js гэх мэт орчин үеийн веб технологиуд",
+    id: "ielts",
+    icon: BookOpen,
+    title: "IELTS",
+    description: "IELTS шалгалтын бэлтгэл, Listening, Reading, Writing, Speaking",
     coursesCount: 15,
     color: "from-blue-500 to-cyan-500",
   },
@@ -20,10 +20,10 @@ const categories = [
     color: "from-purple-500 to-pink-500",
   },
   {
-    id: "ai",
-    icon: Brain,
-    title: "AI сургалт",
-    description: "Machine Learning, Deep Learning, хиймэл оюун ухааны үндэс",
+    id: "sat",
+    icon: GraduationCap,
+    title: "SAT",
+    description: "SAT шалгалтын бэлтгэл, Math, Reading, Writing секцүүд",
     coursesCount: 10,
     color: "from-amber-500 to-orange-500",
   },
