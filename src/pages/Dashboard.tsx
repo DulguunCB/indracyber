@@ -1,15 +1,17 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { BookOpen, PlayCircle, Clock, GraduationCap } from "lucide-react";
+import { BookOpen, PlayCircle, Clock, GraduationCap, Loader2, CheckCircle2 } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Badge } from "@/components/ui/badge";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 
 interface PurchasedCourse {
   id: string;
   purchased_at: string;
+  status: string | null;
   courses: {
     id: string;
     title: string;
@@ -73,6 +75,7 @@ const Dashboard = () => {
       .select(`
         id,
         purchased_at,
+        status,
         courses (
           id,
           title,
@@ -188,48 +191,85 @@ const Dashboard = () => {
             </div>
           ) : purchasedCourses.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {purchasedCourses.map((purchase) => (
-                <Link
-                  key={purchase.id}
-                  to={`/dashboard/courses/${purchase.courses.id}`}
-                  className="group bg-card rounded-xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300"
-                >
-                  <div className="aspect-video relative overflow-hidden bg-muted">
-                    {purchase.courses.thumbnail_url ? (
-                      <img
-                        src={purchase.courses.thumbnail_url}
-                        alt={purchase.courses.title}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                      />
-                    ) : (
-                      <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20">
-                        <BookOpen className="h-12 w-12 text-primary/40" />
+              {purchasedCourses.map((purchase) => {
+                const isPending = purchase.status === "pending";
+                const isCompleted = purchase.status === "completed";
+                
+                const CardWrapper = isPending ? "div" : Link;
+                const cardProps = isPending 
+                  ? { className: "group bg-card rounded-xl overflow-hidden shadow-card opacity-80" }
+                  : { 
+                      to: `/dashboard/courses/${purchase.courses.id}`,
+                      className: "group bg-card rounded-xl overflow-hidden shadow-card hover:shadow-card-hover transition-all duration-300"
+                    };
+
+                return (
+                  <CardWrapper key={purchase.id} {...cardProps as any}>
+                    <div className="aspect-video relative overflow-hidden bg-muted">
+                      {purchase.courses.thumbnail_url ? (
+                        <img
+                          src={purchase.courses.thumbnail_url}
+                          alt={purchase.courses.title}
+                          className={`w-full h-full object-cover ${!isPending ? "group-hover:scale-105" : ""} transition-transform duration-300`}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20">
+                          <BookOpen className="h-12 w-12 text-primary/40" />
+                        </div>
+                      )}
+                      {isPending ? (
+                        <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
+                          <div className="text-center text-white">
+                            <Loader2 className="h-10 w-10 animate-spin mx-auto mb-2" />
+                            <p className="text-sm font-medium">Баталгаажуулж байна</p>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <PlayCircle className="h-16 w-16 text-white" />
+                        </div>
+                      )}
+                      {/* Status Badge */}
+                      <div className="absolute top-3 right-3">
+                        {isPending ? (
+                          <Badge variant="secondary" className="bg-yellow-500/90 text-white border-0">
+                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                            Хүлээгдэж байна
+                          </Badge>
+                        ) : isCompleted ? (
+                          <Badge variant="secondary" className="bg-green-500/90 text-white border-0">
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            Баталгаажсан
+                          </Badge>
+                        ) : null}
                       </div>
-                    )}
-                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                      <PlayCircle className="h-16 w-16 text-white" />
                     </div>
-                  </div>
-                  <div className="p-5">
-                    <span className="text-xs text-muted-foreground">
-                      {categoryLabels[purchase.courses.category] || purchase.courses.category}
-                    </span>
-                    <h3 className="font-semibold text-lg mt-1 group-hover:text-primary transition-colors">
-                      {purchase.courses.title}
-                    </h3>
-                    <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
-                      <div className="flex items-center gap-1">
-                        <Clock className="h-4 w-4" />
-                        <span>{purchase.courses.duration_hours || 0} цаг</span>
+                    <div className="p-5">
+                      <span className="text-xs text-muted-foreground">
+                        {categoryLabels[purchase.courses.category] || purchase.courses.category}
+                      </span>
+                      <h3 className={`font-semibold text-lg mt-1 ${!isPending ? "group-hover:text-primary" : ""} transition-colors`}>
+                        {purchase.courses.title}
+                      </h3>
+                      <div className="flex items-center gap-4 mt-3 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-1">
+                          <Clock className="h-4 w-4" />
+                          <span>{purchase.courses.duration_hours || 0} цаг</span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <BookOpen className="h-4 w-4" />
+                          <span>{purchase.courses.lessons_count || 0} хичээл</span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-1">
-                        <BookOpen className="h-4 w-4" />
-                        <span>{purchase.courses.lessons_count || 0} хичээл</span>
-                      </div>
+                      {isPending && (
+                        <p className="text-xs text-yellow-600 mt-3">
+                          Админ таны төлбөрийг шалгаж баталгаажуулах хүртэл хүлээнэ үү
+                        </p>
+                      )}
                     </div>
-                  </div>
-                </Link>
-              ))}
+                  </CardWrapper>
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-16 bg-muted/30 rounded-xl">
