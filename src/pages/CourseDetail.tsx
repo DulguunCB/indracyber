@@ -62,11 +62,6 @@ const categoryLabels: Record<string, string> = {
   ai: "AI сургалт",
 };
 
-// Generate unique 4-digit code for bank transfer
-const generateTransferCode = (): string => {
-  return Math.floor(1000 + Math.random() * 9000).toString();
-};
-
 const CourseDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -78,14 +73,13 @@ const CourseDetail = () => {
   const [hasPendingPurchase, setHasPendingPurchase] = useState(false);
   const [purchasing, setPurchasing] = useState(false);
   const [showBankDialog, setShowBankDialog] = useState(false);
-  const [transferCode, setTransferCode] = useState("");
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ?? null);
-      }
-    );
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+    });
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -110,7 +104,8 @@ const CourseDetail = () => {
   const fetchCourse = async () => {
     const { data, error } = await supabase
       .from("courses")
-      .select(`
+      .select(
+        `
         id,
         title,
         description,
@@ -122,7 +117,8 @@ const CourseDetail = () => {
         level,
         category,
         instructors (id, name, bio, avatar_url, expertise)
-      `)
+      `,
+      )
       .eq("id", id)
       .eq("is_published", true)
       .single();
@@ -178,12 +174,10 @@ const CourseDetail = () => {
       navigate("/auth");
       return;
     }
-    // Generate new 4-digit code each time dialog opens
-    setTransferCode(generateTransferCode());
     setShowBankDialog(true);
   };
 
-  const handleSubmitBankTransfer = async () => {
+  const handleSubmitBankTransfer = async (transactionId: string) => {
     if (!user || !course) return;
 
     setPurchasing(true);
@@ -194,7 +188,7 @@ const CourseDetail = () => {
         course_id: course.id,
         amount: Number(course.price),
         payment_method: "bank_transfer",
-        payment_id: transferCode,
+        payment_id: transactionId,
         status: "pending",
       });
 
@@ -210,7 +204,7 @@ const CourseDetail = () => {
         setShowBankDialog(false);
       }
     } catch (error) {
-      toast.error("Алдаа гарлаа. Дахин оролдоно у|.");
+      toast.error("Алдаа гарлаа. Дахин оролдоно уу.");
     } finally {
       setPurchasing(false);
     }
@@ -264,13 +258,9 @@ const CourseDetail = () => {
             <Badge className="bg-accent text-accent-foreground">
               {categoryLabels[course.category] || course.category}
             </Badge>
-            <Badge variant="secondary">
-              {levelLabels[course.level || "beginner"]}
-            </Badge>
+            <Badge variant="secondary">{levelLabels[course.level || "beginner"]}</Badge>
           </div>
-          <h1 className="text-3xl md:text-4xl font-bold text-primary-foreground">
-            {course.title}
-          </h1>
+          <h1 className="text-3xl md:text-4xl font-bold text-primary-foreground">{course.title}</h1>
         </div>
       </div>
 
@@ -281,11 +271,7 @@ const CourseDetail = () => {
             {/* Video Thumbnail */}
             <div className="aspect-video rounded-xl overflow-hidden bg-muted">
               {course.thumbnail_url ? (
-                <img
-                  src={course.thumbnail_url}
-                  alt={course.title}
-                  className="w-full h-full object-cover"
-                />
+                <img src={course.thumbnail_url} alt={course.title} className="w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/20 to-accent/20">
                   <PlayCircle className="h-20 w-20 text-primary/40" />
@@ -318,9 +304,7 @@ const CourseDetail = () => {
                     )}
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg">
-                      {course.instructors.name}
-                    </h3>
+                    <h3 className="font-semibold text-lg">{course.instructors.name}</h3>
                     {course.instructors.expertise && (
                       <div className="flex flex-wrap gap-1 mt-1">
                         {course.instructors.expertise.map((exp) => (
@@ -330,11 +314,7 @@ const CourseDetail = () => {
                         ))}
                       </div>
                     )}
-                    {course.instructors.bio && (
-                      <p className="text-muted-foreground mt-2">
-                        {course.instructors.bio}
-                      </p>
-                    )}
+                    {course.instructors.bio && <p className="text-muted-foreground mt-2">{course.instructors.bio}</p>}
                   </div>
                 </div>
               </div>
@@ -346,19 +326,14 @@ const CourseDetail = () => {
               <div className="space-y-2">
                 {lessons.length > 0 ? (
                   lessons.map((lesson, index) => (
-                    <div
-                      key={lesson.id}
-                      className="flex items-center gap-4 p-4 bg-card rounded-lg shadow-sm"
-                    >
+                    <div key={lesson.id} className="flex items-center gap-4 p-4 bg-card rounded-lg shadow-sm">
                       <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
                         {index + 1}
                       </div>
                       <div className="flex-1">
                         <h4 className="font-medium">{lesson.title}</h4>
                         {lesson.duration_minutes && (
-                          <span className="text-sm text-muted-foreground">
-                            {lesson.duration_minutes} минут
-                          </span>
+                          <span className="text-sm text-muted-foreground">{lesson.duration_minutes} минут</span>
                         )}
                       </div>
                       {lesson.is_preview ? (
@@ -374,9 +349,7 @@ const CourseDetail = () => {
                     </div>
                   ))
                 ) : (
-                  <p className="text-muted-foreground text-center py-8">
-                    Хичээл байхгүй байна
-                  </p>
+                  <p className="text-muted-foreground text-center py-8">Хичээл байхгүй байна</p>
                 )}
               </div>
             </div>
@@ -386,9 +359,7 @@ const CourseDetail = () => {
           <div className="lg:col-span-1">
             <div className="sticky top-24 bg-card rounded-xl p-6 shadow-card space-y-6">
               <div className="text-center">
-                <div className="text-4xl font-bold text-primary mb-2">
-                  {Number(course.price).toLocaleString()}₮
-                </div>
+                <div className="text-4xl font-bold text-primary mb-2">{Number(course.price).toLocaleString()}₮</div>
               </div>
 
               {hasPurchased ? (
@@ -412,14 +383,9 @@ const CourseDetail = () => {
                   </Button>
                 </div>
               ) : (
-                <Button
-                  variant="hero"
-                  size="lg"
-                  className="w-full"
-                  onClick={handleBankTransfer}
-                >
+                <Button variant="hero" size="lg" className="w-full" onClick={handleBankTransfer}>
                   <Building2 className="h-5 w-5 mr-2" />
-                  Дансаар шилжүүлэх
+                  Худалдаж авах
                 </Button>
               )}
 
@@ -452,7 +418,6 @@ const CourseDetail = () => {
           onOpenChange={setShowBankDialog}
           courseTitle={course.title}
           price={Number(course.price)}
-          transferCode={transferCode}
           onSubmit={handleSubmitBankTransfer}
           isSubmitting={purchasing}
         />
