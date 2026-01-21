@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import CoursePlayer from "./pages/CoursePlayer";
 import Admin from "./pages/Admin";
 import AdminCourseForm from "./pages/AdminCourseForm";
+import AdminCourseLessons from "./pages/AdminCourseLessons";
 import Contact from "./pages/Contact";
 import NotFound from "./pages/NotFound";
 
@@ -32,6 +33,7 @@ const App = () => (
           <Route path="/admin" element={<Admin />} />
           <Route path="/admin/courses/new" element={<AdminCourseForm />} />
           <Route path="/admin/courses/:id/edit" element={<AdminCourseForm />} />
+          <Route path="/admin/courses/:courseId/lessons" element={<AdminCourseLessons />} />
           <Route path="/contact" element={<Contact />} />
           {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
           <Route path="*" element={<NotFound />} />
