@@ -17,6 +17,7 @@ interface BankTransferDialogProps {
   onOpenChange: (open: boolean) => void;
   courseTitle: string;
   price: number;
+  transferCode: string;
   onSubmit: (transactionId: string) => Promise<void>;
   isSubmitting: boolean;
 }
@@ -32,6 +33,7 @@ const BankTransferDialog = ({
   onOpenChange,
   courseTitle,
   price,
+  transferCode,
   onSubmit,
   isSubmitting,
 }: BankTransferDialogProps) => {
@@ -143,6 +145,27 @@ const BankTransferDialog = ({
                 )}
               </Button>
             </div>
+
+            <div className="flex items-center justify-between p-3 bg-primary/10 border-2 border-primary rounded-lg">
+              <div>
+                <p className="text-xs text-muted-foreground">Гүйлгээний утга (заавал бичнэ)</p>
+                <p className="font-bold text-xl text-primary font-mono">{transferCode}</p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => copyToClipboard(transferCode, "code")}
+              >
+                {copiedField === "code" ? (
+                  <Check className="h-4 w-4 text-green-500" />
+                ) : (
+                  <Copy className="h-4 w-4" />
+                )}
+              </Button>
+            </div>
+            <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+              ⚠️ Гүйлгээний утга дээр дээрх кодыг заавал бичнэ үү!
+            </p>
           </div>
 
           {/* Transaction ID Input */}
