@@ -24,12 +24,12 @@ interface Course {
   } | null;
 }
 
-const categories = [
-  { id: "all", label: "Бүгд" },
-  { id: "ielts", label: "IELTS" },
-  { id: "programming", label: "Програмчлал" },
-  { id: "sat", label: "SAT" },
-];
+// Default category labels
+const CATEGORY_LABELS: Record<string, string> = {
+  ielts: "IELTS",
+  programming: "Програмчлал",
+  sat: "SAT",
+};
 
 const levels = [
   { id: "all", label: "Бүх түвшин" },
@@ -47,6 +47,13 @@ const Courses = () => {
     searchParams.get("category") || "all"
   );
   const [selectedLevel, setSelectedLevel] = useState("all");
+  const [categories, setCategories] = useState<{ id: string; label: string }[]>([
+    { id: "all", label: "Бүгд" },
+  ]);
+
+  useEffect(() => {
+    fetchCategories();
+  }, []);
 
   useEffect(() => {
     fetchCourses();
@@ -58,6 +65,31 @@ const Courses = () => {
       setSelectedCategory(category);
     }
   }, [searchParams]);
+
+  const fetchCategories = async () => {
+    const { data } = await supabase
+      .from("courses")
+      .select("category")
+      .eq("is_published", true);
+
+    if (data) {
+      const uniqueCategories = [...new Set(data.map((c) => c.category))];
+      const categoryList = uniqueCategories.map((cat) => ({
+        id: cat,
+        label: CATEGORY_LABELS[cat] || cat,
+      }));
+      
+      // Sort: known categories first, then alphabetically
+      categoryList.sort((a, b) => {
+        const aKnown = CATEGORY_LABELS[a.id] ? 0 : 1;
+        const bKnown = CATEGORY_LABELS[b.id] ? 0 : 1;
+        if (aKnown !== bKnown) return aKnown - bKnown;
+        return a.label.localeCompare(b.label);
+      });
+
+      setCategories([{ id: "all", label: "Бүгд" }, ...categoryList]);
+    }
+  };
 
   const fetchCourses = async () => {
     setLoading(true);
