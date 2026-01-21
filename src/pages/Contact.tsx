@@ -227,13 +227,13 @@ const Contact = () => {
                   <div>
                     <h3 className="font-semibold mb-1">Имэйл</h3>
                     <p className="text-muted-foreground">
-                      <a href="mailto:info@edumongol.mn" className="hover:text-primary transition-colors">
-                        info@edumongol.mn
+                      <a href="mailto:info@indracyber.mn" className="hover:text-primary transition-colors">
+                        info@indracyber.mn
                       </a>
                     </p>
                     <p className="text-muted-foreground">
-                      <a href="mailto:support@edumongol.mn" className="hover:text-primary transition-colors">
-                        support@edumongol.mn
+                      <a href="mailto:support@indracyber.mn" className="hover:text-primary transition-colors">
+                        support@indracyber.mn
                       </a>
                     </p>
                   </div>

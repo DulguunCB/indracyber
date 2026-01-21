@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import {
-  BookOpen,
   Plus,
   Pencil,
   LayoutDashboard,
@@ -15,6 +14,7 @@ import {
   CheckCircle,
   XCircle,
 } from "lucide-react";
+import logo from "@/assets/logo.png";
 import { Button } from "@/components/ui/button";
 import {
   Table,
@@ -250,10 +250,7 @@ const AdminPromoCodes = () => {
       <aside className="w-64 bg-sidebar text-sidebar-foreground hidden lg:flex flex-col">
         <div className="p-6 border-b border-sidebar-border">
           <Link to="/" className="flex items-center gap-2">
-            <div className="h-9 w-9 rounded-lg bg-sidebar-primary flex items-center justify-center">
-              <BookOpen className="h-5 w-5 text-sidebar-primary-foreground" />
-            </div>
-            <span className="text-xl font-bold">EduMongol</span>
+            <img src={logo} alt="INDRA Cyber Academy" className="h-12 w-auto" />
           </Link>
         </div>
 

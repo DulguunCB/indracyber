@@ -77,8 +77,8 @@ const Footer = () => {
             <ul className="space-y-3 text-sm text-primary-foreground/70">
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-accent" />
-                <a href="mailto:info@edumongol.mn" className="hover:text-accent transition-colors">
-                  info@edumongol.mn
+                <a href="mailto:info@indracyber.mn" className="hover:text-accent transition-colors">
+                  info@indracyber.mn
                 </a>
               </li>
               <li className="flex items-center gap-2">
@@ -96,7 +96,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-primary-foreground/20 mt-8 pt-8 text-center text-sm text-primary-foreground/60">
-          <p>© {new Date().getFullYear()} EduMongol. Бүх эрх хуулиар хамгаалагдсан.</p>
+          <p>© {new Date().getFullYear()} INDRA Cyber Academy. Бүх эрх хуулиар хамгаалагдсан.</p>
         </div>
       </div>
     </footer>
