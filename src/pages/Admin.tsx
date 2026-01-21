@@ -14,6 +14,7 @@ import {
   CheckCircle,
   XCircle,
   Clock,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -26,6 +27,17 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import { toast } from "sonner";
@@ -224,6 +236,24 @@ const Admin = () => {
     } else {
       toast.success(currentStatus ? "Нийтлэлийг болиулсан" : "Амжилттай нийтлэлээ");
       fetchData();
+    }
+  };
+
+  const deleteCourse = async (courseId: string) => {
+    try {
+      // First delete related lessons
+      await supabase.from("lessons").delete().eq("course_id", courseId);
+      
+      // Then delete the course
+      const { error } = await supabase.from("courses").delete().eq("id", courseId);
+      
+      if (error) throw error;
+      
+      toast.success("Сургалт амжилттай устгагдлаа");
+      fetchData();
+    } catch (error: any) {
+      console.error("Error deleting course:", error);
+      toast.error("Устгахад алдаа гарлаа");
     }
   };
 
@@ -436,6 +466,27 @@ const Admin = () => {
                                   <Pencil className="h-4 w-4" />
                                 </Link>
                               </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="text-destructive hover:text-destructive">
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Сургалт устгах уу?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      "{course.title}" сургалт болон түүний бүх хичээлүүд устгагдана. Энэ үйлдлийг буцаах боломжгүй.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Болих</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => deleteCourse(course.id)}>
+                                      Устгах
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                             </div>
                           </TableCell>
                         </TableRow>
