@@ -3,12 +3,11 @@ import { Copy, Check, Building2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
@@ -18,7 +17,7 @@ interface BankTransferDialogProps {
   courseTitle: string;
   price: number;
   transferCode: string;
-  onSubmit: (transactionId: string) => Promise<void>;
+  onSubmit: () => Promise<void>;
   isSubmitting: boolean;
 }
 
@@ -37,7 +36,7 @@ const BankTransferDialog = ({
   onSubmit,
   isSubmitting,
 }: BankTransferDialogProps) => {
-  const [transactionId, setTransactionId] = useState("");
+  const [confirmed, setConfirmed] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
 
   const copyToClipboard = async (text: string, field: string) => {
@@ -53,11 +52,12 @@ const BankTransferDialog = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!transactionId.trim()) {
-      toast.error("Гүйлгээний дугаар оруулна уу");
+    if (!confirmed) {
+      toast.error("Төлбөр шилжүүлсэн гэдгээ баталгаажуулна уу");
       return;
     }
-    await onSubmit(transactionId.trim());
+    await onSubmit();
+    setConfirmed(false);
   };
 
   return (
@@ -120,23 +120,21 @@ const BankTransferDialog = ({
             </Button>
           </div>
 
-          {/* Transaction ID Input */}
+          {/* Confirmation */}
           <form onSubmit={handleSubmit} className="space-y-3">
-            <div className="space-y-1">
-              <Label htmlFor="transactionId" className="text-sm">Гүйлгээний дугаар</Label>
-              <Input
-                id="transactionId"
-                placeholder="Жишээ: 123456789"
-                value={transactionId}
-                onChange={(e) => setTransactionId(e.target.value)}
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="confirmed"
+                checked={confirmed}
+                onCheckedChange={(checked) => setConfirmed(checked === true)}
               />
-              <p className="text-xs text-muted-foreground">
-                Шилжүүлэг хийсний дараа гүйлгээний дугаараа оруулна уу.
-              </p>
+              <Label htmlFor="confirmed" className="text-sm cursor-pointer">
+                Төлбөр шилжүүлсэн
+              </Label>
             </div>
 
-            <Button type="submit" className="w-full" disabled={isSubmitting || !transactionId.trim()}>
-              {isSubmitting ? "Илгээж байна..." : "Баталгаажуулах хүсэлт илгээх"}
+            <Button type="submit" className="w-full" disabled={isSubmitting || !confirmed}>
+              {isSubmitting ? "Илгээж байна..." : "Баталгаажуулах"}
             </Button>
           </form>
         </div>
