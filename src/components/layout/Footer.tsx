@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
-import { BookOpen, Mail, Phone, MapPin } from "lucide-react";
+import { Mail, Phone, MapPin } from "lucide-react";
+import logo from "@/assets/logo.png";
 
 const Footer = () => {
   return (
@@ -9,10 +10,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-accent">
-                <BookOpen className="h-5 w-5 text-accent-foreground" />
-              </div>
-              <span className="text-xl font-bold">EduMongol</span>
+              <img src={logo} alt="INDRA Cyber Academy" className="h-10 w-auto brightness-0 invert" />
             </Link>
             <p className="text-primary-foreground/70 text-sm">
               Монголын тэргүүлэх онлайн сургалтын платформ. Мэргэжлийн багш нартай хамтран чанартай боловсролыг танд хүргэнэ.
