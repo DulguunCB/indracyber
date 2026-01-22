@@ -228,6 +228,28 @@ const CoursePlayer = () => {
         <div className="flex-1 min-w-0">
           <h1 className="font-semibold truncate">{course?.title}</h1>
         </div>
+        
+        {/* Progress indicator */}
+        <div className="hidden sm:flex items-center gap-2 text-sm">
+          <div className="flex items-center gap-1.5">
+            <CheckCircle className="h-4 w-4 text-green-500" />
+            <span className="text-muted-foreground">
+              {Object.keys(completedLessons).length}/{lessons.length} хичээл
+            </span>
+          </div>
+          <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
+            <div 
+              className="h-full bg-green-500 transition-all duration-300"
+              style={{ 
+                width: `${lessons.length > 0 ? (Object.keys(completedLessons).length / lessons.length) * 100 : 0}%` 
+              }}
+            />
+          </div>
+          <span className="font-medium text-green-600">
+            {lessons.length > 0 ? Math.round((Object.keys(completedLessons).length / lessons.length) * 100) : 0}%
+          </span>
+        </div>
+
         <Button
           variant="ghost"
           size="icon"
