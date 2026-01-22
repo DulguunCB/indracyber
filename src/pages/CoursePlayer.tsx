@@ -1,11 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { useParams, Link, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   PlayCircle,
   CheckCircle,
-  ChevronDown,
-  ChevronUp,
   Menu,
   X,
 } from "lucide-react";
@@ -13,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
+import Player from "@vimeo/player";
 
 interface Lesson {
   id: string;
@@ -28,6 +27,10 @@ interface Course {
   title: string;
 }
 
+interface CompletedLessons {
+  [lessonId: string]: boolean;
+}
+
 const CoursePlayer = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
@@ -37,6 +40,9 @@ const CoursePlayer = () => {
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [completedLessons, setCompletedLessons] = useState<CompletedLessons>({});
+  const playerRef = useRef<Player | null>(null);
+  const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -99,19 +105,32 @@ const CoursePlayer = () => {
     if (lessonsData && lessonsData.length > 0) {
       setLessons(lessonsData);
       
-      // Check last watched lesson from progress
-      const { data: progressData } = await supabase
+      // Fetch all completed lessons for this course
+      const { data: allProgressData } = await supabase
         .from("lesson_progress")
-        .select("lesson_id")
+        .select("lesson_id, completed, last_watched_at")
         .eq("user_id", user?.id)
-        .eq("course_id", courseId)
-        .order("last_watched_at", { ascending: false })
-        .limit(1)
-        .single();
+        .eq("course_id", courseId);
 
-      if (progressData) {
-        const lastLesson = lessonsData.find(l => l.id === progressData.lesson_id);
-        setCurrentLesson(lastLesson || lessonsData[0]);
+      if (allProgressData) {
+        const completed: CompletedLessons = {};
+        allProgressData.forEach(p => {
+          if (p.completed) {
+            completed[p.lesson_id] = true;
+          }
+        });
+        setCompletedLessons(completed);
+
+        // Find last watched lesson
+        const sorted = [...allProgressData].sort(
+          (a, b) => new Date(b.last_watched_at).getTime() - new Date(a.last_watched_at).getTime()
+        );
+        if (sorted.length > 0) {
+          const lastLesson = lessonsData.find(l => l.id === sorted[0].lesson_id);
+          setCurrentLesson(lastLesson || lessonsData[0]);
+        } else {
+          setCurrentLesson(lessonsData[0]);
+        }
       } else {
         setCurrentLesson(lessonsData[0]);
       }
@@ -119,6 +138,50 @@ const CoursePlayer = () => {
 
     setLoading(false);
   };
+
+  // Mark lesson as completed
+  const markLessonCompleted = useCallback(async (lessonId: string) => {
+    if (!user || !courseId) return;
+    
+    await supabase
+      .from("lesson_progress")
+      .upsert({
+        user_id: user.id,
+        course_id: courseId,
+        lesson_id: lessonId,
+        completed: true,
+        last_watched_at: new Date().toISOString(),
+      }, {
+        onConflict: "user_id,lesson_id"
+      });
+
+    setCompletedLessons(prev => ({ ...prev, [lessonId]: true }));
+  }, [user, courseId]);
+
+  // Setup Vimeo player event listener
+  useEffect(() => {
+    if (!currentLesson?.vimeo_video_id || !iframeRef.current) return;
+
+    // Clean up previous player
+    if (playerRef.current) {
+      playerRef.current.off("ended");
+      playerRef.current = null;
+    }
+
+    // Create new player and listen for video end
+    const player = new Player(iframeRef.current);
+    playerRef.current = player;
+
+    player.on("ended", () => {
+      markLessonCompleted(currentLesson.id);
+    });
+
+    return () => {
+      if (playerRef.current) {
+        playerRef.current.off("ended");
+      }
+    };
+  }, [currentLesson?.id, currentLesson?.vimeo_video_id, markLessonCompleted]);
 
   const handleLessonSelect = async (lesson: Lesson) => {
     setCurrentLesson(lesson);
@@ -181,6 +244,7 @@ const CoursePlayer = () => {
           <div className="aspect-video bg-black relative">
             {currentLesson?.vimeo_video_id ? (
               <iframe
+                ref={iframeRef}
                 src={`https://player.vimeo.com/video/${currentLesson.vimeo_video_id}?h=0`}
                 className="absolute inset-0 w-full h-full"
                 allow="autoplay; fullscreen; picture-in-picture"
@@ -241,16 +305,24 @@ const CoursePlayer = () => {
                         className={`
                           h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0
                           ${
-                            currentLesson?.id === lesson.id
-                              ? "bg-primary text-primary-foreground"
-                              : "bg-muted text-muted-foreground"
+                            completedLessons[lesson.id]
+                              ? "bg-green-500 text-white"
+                              : currentLesson?.id === lesson.id
+                                ? "bg-primary text-primary-foreground"
+                                : "bg-muted text-muted-foreground"
                           }
                         `}
                       >
-                        {index + 1}
+                        {completedLessons[lesson.id] ? (
+                          <CheckCircle className="h-5 w-5" />
+                        ) : (
+                          index + 1
+                        )}
                       </div>
                       <div className="min-w-0">
-                        <p className="font-medium line-clamp-2">{lesson.title}</p>
+                        <p className={`font-medium line-clamp-2 ${completedLessons[lesson.id] ? "text-green-600" : ""}`}>
+                          {lesson.title}
+                        </p>
                         {lesson.duration_minutes && (
                           <p className="text-xs text-muted-foreground mt-1">
                             {lesson.duration_minutes} минут
