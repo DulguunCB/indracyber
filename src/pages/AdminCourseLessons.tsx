@@ -43,6 +43,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import QuizEditor from "@/components/admin/QuizEditor";
+import CertificateExamEditor from "@/components/admin/CertificateExamEditor";
 
 interface Lesson {
   id: string;
@@ -334,10 +335,13 @@ const AdminCourseLessons = () => {
               <p className="text-muted-foreground">{course?.title}</p>
             </div>
           </div>
-          <Button onClick={openAddDialog}>
-            <Plus className="h-4 w-4 mr-2" />
-            Хичээл нэмэх
-          </Button>
+          <div className="flex items-center gap-2">
+            {courseId && <CertificateExamEditor courseId={courseId} />}
+            <Button onClick={openAddDialog}>
+              <Plus className="h-4 w-4 mr-2" />
+              Хичээл нэмэх
+            </Button>
+          </div>
         </div>
       </header>
 

@@ -7,6 +7,7 @@ import {
   Menu,
   X,
   ClipboardList,
+  Award,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -14,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import Player from "@vimeo/player";
 import QuizPlayer from "@/components/course/QuizPlayer";
+import CertificateExam from "@/components/course/CertificateExam";
 
 interface Lesson {
   id: string;
@@ -44,6 +46,7 @@ const CoursePlayer = () => {
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [completedLessons, setCompletedLessons] = useState<CompletedLessons>({});
+  const [showCertificateExam, setShowCertificateExam] = useState(false);
   const playerRef = useRef<Player | null>(null);
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
 
@@ -266,7 +269,18 @@ const CoursePlayer = () => {
       <div className="flex-1 flex overflow-hidden">
         {/* Main Content */}
         <div className="flex-1 flex flex-col overflow-auto">
-          {currentLesson?.lesson_type === "quiz" ? (
+          {showCertificateExam ? (
+            /* Certificate Exam Content */
+            <div className="flex-1 bg-card">
+              <CertificateExam
+                courseId={courseId || ""}
+                courseName={course?.title || ""}
+                userId={user?.id || ""}
+                completedLessonsCount={Object.keys(completedLessons).length}
+                totalLessonsCount={lessons.length}
+              />
+            </div>
+          ) : currentLesson?.lesson_type === "quiz" ? (
             /* Quiz Content */
             <div className="flex-1 bg-card">
               <QuizPlayer
@@ -300,31 +314,33 @@ const CoursePlayer = () => {
           )}
 
           {/* Current Lesson Info */}
-          <div className="p-6 flex items-start justify-between gap-4">
-            <div className="min-w-0">
-              <div className="flex items-center gap-2 mb-2">
-                {currentLesson?.lesson_type === "quiz" && (
-                  <ClipboardList className="h-5 w-5 text-purple-600" />
+          {!showCertificateExam && (
+            <div className="p-6 flex items-start justify-between gap-4">
+              <div className="min-w-0">
+                <div className="flex items-center gap-2 mb-2">
+                  {currentLesson?.lesson_type === "quiz" && (
+                    <ClipboardList className="h-5 w-5 text-purple-600" />
+                  )}
+                  <h2 className="text-2xl font-bold">{currentLesson?.title}</h2>
+                </div>
+                {currentLesson?.description && (
+                  <p className="text-muted-foreground">{currentLesson.description}</p>
                 )}
-                <h2 className="text-2xl font-bold">{currentLesson?.title}</h2>
               </div>
-              {currentLesson?.description && (
-                <p className="text-muted-foreground">{currentLesson.description}</p>
+              {currentLesson && currentLesson.lesson_type !== "quiz" && (
+                <Button
+                  variant={completedLessons[currentLesson.id] ? "secondary" : "default"}
+                  size="sm"
+                  className="flex-shrink-0 gap-2"
+                  onClick={() => markLessonCompleted(currentLesson.id)}
+                  disabled={completedLessons[currentLesson.id]}
+                >
+                  <CheckCircle className="h-4 w-4" />
+                  {completedLessons[currentLesson.id] ? "Үзсэн" : "Үзсэн гэж тэмдэглэх"}
+                </Button>
               )}
             </div>
-            {currentLesson && currentLesson.lesson_type !== "quiz" && (
-              <Button
-                variant={completedLessons[currentLesson.id] ? "secondary" : "default"}
-                size="sm"
-                className="flex-shrink-0 gap-2"
-                onClick={() => markLessonCompleted(currentLesson.id)}
-                disabled={completedLessons[currentLesson.id]}
-              >
-                <CheckCircle className="h-4 w-4" />
-                {completedLessons[currentLesson.id] ? "Үзсэн" : "Үзсэн гэж тэмдэглэх"}
-              </Button>
-            )}
-          </div>
+          )}
         </div>
 
         {/* Sidebar - Lesson List */}
@@ -343,19 +359,59 @@ const CoursePlayer = () => {
                 {lessons.length} хичээл
               </p>
             </div>
+            {/* Certificate Exam Button */}
+            <div className="p-2 border-b border-border">
+              <button
+                onClick={() => {
+                  setShowCertificateExam(true);
+                  setCurrentLesson(null);
+                  if (window.innerWidth < 1024) {
+                    setSidebarOpen(false);
+                  }
+                }}
+                className={`w-full text-left p-3 rounded-lg transition-colors ${
+                  showCertificateExam
+                    ? "bg-primary/10 text-primary"
+                    : "hover:bg-muted"
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                      showCertificateExam
+                        ? "bg-primary text-primary-foreground"
+                        : "bg-amber-100 text-amber-600"
+                    }`}
+                  >
+                    <Award className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Сертификатийн шалгалт</p>
+                    <p className="text-xs text-muted-foreground">
+                      {Object.keys(completedLessons).length >= lessons.length && lessons.length > 0
+                        ? "Шалгалт өгөх боломжтой"
+                        : `${Object.keys(completedLessons).length}/${lessons.length} хичээл дууссан`}
+                    </p>
+                  </div>
+                </div>
+              </button>
+            </div>
             <ScrollArea className="flex-1">
               <div className="p-2">
                 {lessons.map((lesson, index) => (
-                  <button
-                    key={lesson.id}
-                    onClick={() => handleLessonSelect(lesson)}
-                    className={`
-                      w-full text-left p-3 rounded-lg mb-1 transition-colors
-                      ${
-                        currentLesson?.id === lesson.id
-                          ? "bg-primary/10 text-primary"
-                          : "hover:bg-muted"
-                      }
+                    <button
+                      key={lesson.id}
+                      onClick={() => {
+                        setShowCertificateExam(false);
+                        handleLessonSelect(lesson);
+                      }}
+                      className={`
+                        w-full text-left p-3 rounded-lg mb-1 transition-colors
+                        ${
+                          currentLesson?.id === lesson.id && !showCertificateExam
+                            ? "bg-primary/10 text-primary"
+                            : "hover:bg-muted"
+                        }
                     `}
                   >
                     <div className="flex items-start gap-3">
