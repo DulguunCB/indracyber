@@ -156,6 +156,7 @@ export type Database = {
           duration_minutes: number | null
           id: string
           is_preview: boolean | null
+          lesson_type: string
           order_index: number
           title: string
           vimeo_video_id: string | null
@@ -167,6 +168,7 @@ export type Database = {
           duration_minutes?: number | null
           id?: string
           is_preview?: boolean | null
+          lesson_type?: string
           order_index?: number
           title: string
           vimeo_video_id?: string | null
@@ -178,6 +180,7 @@ export type Database = {
           duration_minutes?: number | null
           id?: string
           is_preview?: boolean | null
+          lesson_type?: string
           order_index?: number
           title?: string
           vimeo_video_id?: string | null
@@ -299,6 +302,85 @@ export type Database = {
             columns: ["promo_code_id"]
             isOneToOne: false
             referencedRelation: "promo_codes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_attempts: {
+        Row: {
+          answers: Json
+          completed_at: string
+          id: string
+          lesson_id: string
+          passed: boolean
+          score: number
+          total_questions: number
+          user_id: string
+        }
+        Insert: {
+          answers?: Json
+          completed_at?: string
+          id?: string
+          lesson_id: string
+          passed?: boolean
+          score?: number
+          total_questions?: number
+          user_id: string
+        }
+        Update: {
+          answers?: Json
+          completed_at?: string
+          id?: string
+          lesson_id?: string
+          passed?: boolean
+          score?: number
+          total_questions?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_attempts_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quiz_questions: {
+        Row: {
+          correct_option_index: number
+          created_at: string
+          id: string
+          lesson_id: string
+          options: Json
+          order_index: number
+          question: string
+        }
+        Insert: {
+          correct_option_index: number
+          created_at?: string
+          id?: string
+          lesson_id: string
+          options?: Json
+          order_index?: number
+          question: string
+        }
+        Update: {
+          correct_option_index?: number
+          created_at?: string
+          id?: string
+          lesson_id?: string
+          options?: Json
+          order_index?: number
+          question?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quiz_questions_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
             referencedColumns: ["id"]
           },
         ]

@@ -6,12 +6,14 @@ import {
   CheckCircle,
   Menu,
   X,
+  ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 import Player from "@vimeo/player";
+import QuizPlayer from "@/components/course/QuizPlayer";
 
 interface Lesson {
   id: string;
@@ -20,6 +22,7 @@ interface Lesson {
   vimeo_video_id: string | null;
   duration_minutes: number | null;
   order_index: number;
+  lesson_type: string;
 }
 
 interface Course {
@@ -98,7 +101,7 @@ const CoursePlayer = () => {
     // Fetch lessons
     const { data: lessonsData } = await supabase
       .from("lessons")
-      .select("id, title, description, vimeo_video_id, duration_minutes, order_index")
+      .select("id, title, description, vimeo_video_id, duration_minutes, order_index, lesson_type")
       .eq("course_id", courseId)
       .order("order_index", { ascending: true });
 
@@ -261,36 +264,55 @@ const CoursePlayer = () => {
       </header>
 
       <div className="flex-1 flex overflow-hidden">
-        {/* Video Player */}
-        <div className="flex-1 flex flex-col">
-          <div className="aspect-video bg-black relative">
-            {currentLesson?.vimeo_video_id ? (
-              <iframe
-                ref={iframeRef}
-                src={`https://player.vimeo.com/video/${currentLesson.vimeo_video_id}?h=0`}
-                className="absolute inset-0 w-full h-full"
-                allow="autoplay; fullscreen; picture-in-picture"
-                allowFullScreen
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col overflow-auto">
+          {currentLesson?.lesson_type === "quiz" ? (
+            /* Quiz Content */
+            <div className="flex-1 bg-card">
+              <QuizPlayer
+                lessonId={currentLesson.id}
+                userId={user?.id || ""}
+                onComplete={() => markLessonCompleted(currentLesson.id)}
               />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center text-white/50">
-                <div className="text-center">
-                  <PlayCircle className="h-16 w-16 mx-auto mb-4 opacity-50" />
-                  <p>Видео байхгүй байна</p>
-                </div>
+            </div>
+          ) : (
+            /* Video Content */
+            <>
+              <div className="aspect-video bg-black relative flex-shrink-0">
+                {currentLesson?.vimeo_video_id ? (
+                  <iframe
+                    ref={iframeRef}
+                    src={`https://player.vimeo.com/video/${currentLesson.vimeo_video_id}?h=0`}
+                    className="absolute inset-0 w-full h-full"
+                    allow="autoplay; fullscreen; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center text-white/50">
+                    <div className="text-center">
+                      <PlayCircle className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                      <p>Видео байхгүй байна</p>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
+            </>
+          )}
 
           {/* Current Lesson Info */}
           <div className="p-6 flex items-start justify-between gap-4">
             <div className="min-w-0">
-              <h2 className="text-2xl font-bold mb-2">{currentLesson?.title}</h2>
+              <div className="flex items-center gap-2 mb-2">
+                {currentLesson?.lesson_type === "quiz" && (
+                  <ClipboardList className="h-5 w-5 text-purple-600" />
+                )}
+                <h2 className="text-2xl font-bold">{currentLesson?.title}</h2>
+              </div>
               {currentLesson?.description && (
                 <p className="text-muted-foreground">{currentLesson.description}</p>
               )}
             </div>
-            {currentLesson && (
+            {currentLesson && currentLesson.lesson_type !== "quiz" && (
               <Button
                 variant={completedLessons[currentLesson.id] ? "secondary" : "default"}
                 size="sm"
@@ -351,6 +373,8 @@ const CoursePlayer = () => {
                       >
                         {completedLessons[lesson.id] ? (
                           <CheckCircle className="h-5 w-5" />
+                        ) : lesson.lesson_type === "quiz" ? (
+                          <ClipboardList className="h-4 w-4" />
                         ) : (
                           index + 1
                         )}

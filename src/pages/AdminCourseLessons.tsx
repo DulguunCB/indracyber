@@ -12,6 +12,8 @@ import {
   Save,
   X,
   Loader2,
+  FileQuestion,
+  ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +42,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import QuizEditor from "@/components/admin/QuizEditor";
 
 interface Lesson {
   id: string;
@@ -50,6 +53,7 @@ interface Lesson {
   is_preview: boolean | null;
   vimeo_video_id: string | null;
   course_id: string;
+  lesson_type: string;
 }
 
 interface Course {
@@ -63,6 +67,7 @@ interface LessonFormData {
   duration_minutes: number;
   is_preview: boolean;
   vimeo_video_id: string;
+  lesson_type: "video" | "quiz";
 }
 
 const initialFormData: LessonFormData = {
@@ -71,6 +76,7 @@ const initialFormData: LessonFormData = {
   duration_minutes: 0,
   is_preview: false,
   vimeo_video_id: "",
+  lesson_type: "video",
 };
 
 const AdminCourseLessons = () => {
@@ -84,6 +90,7 @@ const AdminCourseLessons = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingLesson, setEditingLesson] = useState<Lesson | null>(null);
   const [formData, setFormData] = useState<LessonFormData>(initialFormData);
+  const [quizEditorLesson, setQuizEditorLesson] = useState<Lesson | null>(null);
 
   useEffect(() => {
     checkAdminAndFetch();
@@ -155,6 +162,7 @@ const AdminCourseLessons = () => {
       duration_minutes: lesson.duration_minutes || 0,
       is_preview: lesson.is_preview || false,
       vimeo_video_id: lesson.vimeo_video_id || "",
+      lesson_type: (lesson.lesson_type as "video" | "quiz") || "video",
     });
     setDialogOpen(true);
   };
@@ -179,7 +187,8 @@ const AdminCourseLessons = () => {
             description: formData.description || null,
             duration_minutes: formData.duration_minutes,
             is_preview: formData.is_preview,
-            vimeo_video_id: formData.vimeo_video_id || null,
+            vimeo_video_id: formData.lesson_type === "video" ? (formData.vimeo_video_id || null) : null,
+            lesson_type: formData.lesson_type,
           })
           .eq("id", editingLesson.id);
 
@@ -197,8 +206,9 @@ const AdminCourseLessons = () => {
           description: formData.description || null,
           duration_minutes: formData.duration_minutes,
           is_preview: formData.is_preview,
-          vimeo_video_id: formData.vimeo_video_id || null,
+          vimeo_video_id: formData.lesson_type === "video" ? (formData.vimeo_video_id || null) : null,
           order_index: newOrderIndex,
+          lesson_type: formData.lesson_type,
         });
 
         if (error) throw error;
@@ -362,12 +372,21 @@ const AdminCourseLessons = () => {
                   </div>
 
                   <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                    <span className="font-semibold text-primary">{index + 1}</span>
+                    {lesson.lesson_type === "quiz" ? (
+                      <ClipboardList className="h-5 w-5 text-primary" />
+                    ) : (
+                      <span className="font-semibold text-primary">{index + 1}</span>
+                    )}
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <h3 className="font-medium truncate">{lesson.title}</h3>
+                      {lesson.lesson_type === "quiz" && (
+                        <Badge variant="outline" className="shrink-0 bg-purple-50 text-purple-700 border-purple-200">
+                          Тест
+                        </Badge>
+                      )}
                       {lesson.is_preview && (
                         <Badge variant="secondary" className="shrink-0">
                           Үнэгүй үзэх
@@ -388,6 +407,16 @@ const AdminCourseLessons = () => {
                   </div>
 
                   <div className="flex items-center gap-2">
+                    {lesson.lesson_type === "quiz" && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setQuizEditorLesson(lesson)}
+                        title="Тестийн асуултууд"
+                      >
+                        <FileQuestion className="h-4 w-4 text-purple-600" />
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="icon"
@@ -463,6 +492,31 @@ const AdminCourseLessons = () => {
           </DialogHeader>
 
           <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Lesson Type Selector */}
+            <div className="space-y-2">
+              <Label>Хичээлийн төрөл</Label>
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  variant={formData.lesson_type === "video" ? "default" : "outline"}
+                  className="flex-1 gap-2"
+                  onClick={() => handleChange("lesson_type", "video")}
+                >
+                  <Video className="h-4 w-4" />
+                  Видео
+                </Button>
+                <Button
+                  type="button"
+                  variant={formData.lesson_type === "quiz" ? "default" : "outline"}
+                  className="flex-1 gap-2"
+                  onClick={() => handleChange("lesson_type", "quiz")}
+                >
+                  <ClipboardList className="h-4 w-4" />
+                  Тест
+                </Button>
+              </div>
+            </div>
+
             <div className="space-y-2">
               <Label htmlFor="title">Хичээлийн нэр *</Label>
               <Input
@@ -485,29 +539,38 @@ const AdminCourseLessons = () => {
               />
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="duration_minutes">Үргэлжлэх хугацаа (мин)</Label>
-                <Input
-                  id="duration_minutes"
-                  type="number"
-                  min={0}
-                  value={formData.duration_minutes}
-                  onChange={(e) => handleChange("duration_minutes", Number(e.target.value))}
-                  placeholder="0"
-                />
-              </div>
+            {formData.lesson_type === "video" && (
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="duration_minutes">Үргэлжлэх хугацаа (мин)</Label>
+                  <Input
+                    id="duration_minutes"
+                    type="number"
+                    min={0}
+                    value={formData.duration_minutes}
+                    onChange={(e) => handleChange("duration_minutes", Number(e.target.value))}
+                    placeholder="0"
+                  />
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="vimeo_video_id">Vimeo Video ID</Label>
-                <Input
-                  id="vimeo_video_id"
-                  value={formData.vimeo_video_id}
-                  onChange={(e) => handleChange("vimeo_video_id", extractVimeoId(e.target.value))}
-                  placeholder="123456789"
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="vimeo_video_id">Vimeo Video ID</Label>
+                  <Input
+                    id="vimeo_video_id"
+                    value={formData.vimeo_video_id}
+                    onChange={(e) => handleChange("vimeo_video_id", extractVimeoId(e.target.value))}
+                    placeholder="123456789"
+                  />
+                </div>
               </div>
-            </div>
+            )}
+
+            {formData.lesson_type === "quiz" && (
+              <div className="rounded-lg border border-dashed p-4 text-center text-sm text-muted-foreground">
+                <ClipboardList className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Тестийн асуултыг хичээл үүсгэсний дараа засварлах боломжтой</p>
+              </div>
+            )}
 
             <div className="flex items-center justify-between rounded-lg border p-4">
               <div>
@@ -525,7 +588,7 @@ const AdminCourseLessons = () => {
               />
             </div>
 
-            {formData.vimeo_video_id && (
+            {formData.lesson_type === "video" && formData.vimeo_video_id && (
               <div className="rounded-lg overflow-hidden bg-muted">
                 <div className="aspect-video">
                   <iframe
@@ -552,6 +615,24 @@ const AdminCourseLessons = () => {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Quiz Editor Dialog */}
+      <Dialog open={!!quizEditorLesson} onOpenChange={(open) => !open && setQuizEditorLesson(null)}>
+        <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Тестийн асуултууд</DialogTitle>
+            <DialogDescription>
+              {quizEditorLesson?.title}
+            </DialogDescription>
+          </DialogHeader>
+          {quizEditorLesson && (
+            <QuizEditor 
+              lessonId={quizEditorLesson.id} 
+              onClose={() => setQuizEditorLesson(null)} 
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
