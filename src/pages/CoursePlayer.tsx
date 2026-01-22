@@ -261,10 +261,24 @@ const CoursePlayer = () => {
           </div>
 
           {/* Current Lesson Info */}
-          <div className="p-6">
-            <h2 className="text-2xl font-bold mb-2">{currentLesson?.title}</h2>
-            {currentLesson?.description && (
-              <p className="text-muted-foreground">{currentLesson.description}</p>
+          <div className="p-6 flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <h2 className="text-2xl font-bold mb-2">{currentLesson?.title}</h2>
+              {currentLesson?.description && (
+                <p className="text-muted-foreground">{currentLesson.description}</p>
+              )}
+            </div>
+            {currentLesson && (
+              <Button
+                variant={completedLessons[currentLesson.id] ? "secondary" : "default"}
+                size="sm"
+                className="flex-shrink-0 gap-2"
+                onClick={() => markLessonCompleted(currentLesson.id)}
+                disabled={completedLessons[currentLesson.id]}
+              >
+                <CheckCircle className="h-4 w-4" />
+                {completedLessons[currentLesson.id] ? "Үзсэн" : "Үзсэн гэж тэмдэглэх"}
+              </Button>
             )}
           </div>
         </div>
