@@ -5,6 +5,7 @@ import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
 
@@ -22,12 +23,20 @@ interface PurchasedCourse {
   };
 }
 
+interface CourseProgress {
+  [courseId: string]: {
+    completed: number;
+    total: number;
+  };
+}
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
   const [purchasedCourses, setPurchasedCourses] = useState<PurchasedCourse[]>([]);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<{ full_name: string | null } | null>(null);
+  const [courseProgress, setCourseProgress] = useState<CourseProgress>({});
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -92,6 +101,37 @@ const Dashboard = () => {
       console.error("Error fetching purchases:", error);
     } else {
       setPurchasedCourses(purchasesData || []);
+
+      // Fetch progress for each course
+      if (purchasesData && purchasesData.length > 0) {
+        const courseIds = purchasesData.map(p => p.courses.id);
+        
+        // Fetch total lessons count per course
+        const { data: lessonsData } = await supabase
+          .from("lessons")
+          .select("id, course_id")
+          .in("course_id", courseIds);
+
+        // Fetch completed lessons for user
+        const { data: progressData } = await supabase
+          .from("lesson_progress")
+          .select("lesson_id, course_id, completed")
+          .eq("user_id", user?.id)
+          .eq("completed", true)
+          .in("course_id", courseIds);
+
+        // Calculate progress per course
+        const progress: CourseProgress = {};
+        courseIds.forEach(courseId => {
+          const totalLessons = lessonsData?.filter(l => l.course_id === courseId).length || 0;
+          const completedLessons = progressData?.filter(p => p.course_id === courseId).length || 0;
+          progress[courseId] = {
+            completed: completedLessons,
+            total: totalLessons
+          };
+        });
+        setCourseProgress(progress);
+      }
     }
 
     setLoading(false);
@@ -272,6 +312,32 @@ const Dashboard = () => {
                           <span>{purchase.courses.lessons_count || 0} хичээл</span>
                         </div>
                       </div>
+                      
+                      {/* Progress Bar */}
+                      {isCompleted && courseProgress[purchase.courses.id] && (
+                        <div className="mt-4">
+                          <div className="flex justify-between text-xs mb-1">
+                            <span className="text-muted-foreground">Явц</span>
+                            <span className="font-medium">
+                              {courseProgress[purchase.courses.id].total > 0
+                                ? Math.round((courseProgress[purchase.courses.id].completed / courseProgress[purchase.courses.id].total) * 100)
+                                : 0}%
+                            </span>
+                          </div>
+                          <Progress 
+                            value={
+                              courseProgress[purchase.courses.id].total > 0
+                                ? (courseProgress[purchase.courses.id].completed / courseProgress[purchase.courses.id].total) * 100
+                                : 0
+                            } 
+                            className="h-2"
+                          />
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {courseProgress[purchase.courses.id].completed}/{courseProgress[purchase.courses.id].total} хичээл үзсэн
+                          </p>
+                        </div>
+                      )}
+
                       {isPending && (
                         <p className="text-xs text-yellow-600 mt-3">
                           Админ таны төлбөрийг шалгаж баталгаажуулах хүртэл хүлээнэ үү
