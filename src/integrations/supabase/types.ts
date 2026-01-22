@@ -14,6 +14,111 @@ export type Database = {
   }
   public: {
     Tables: {
+      certificate_exam_questions: {
+        Row: {
+          correct_option_index: number
+          created_at: string
+          exam_id: string
+          id: string
+          options: Json
+          order_index: number
+          question: string
+        }
+        Insert: {
+          correct_option_index: number
+          created_at?: string
+          exam_id: string
+          id?: string
+          options?: Json
+          order_index?: number
+          question: string
+        }
+        Update: {
+          correct_option_index?: number
+          created_at?: string
+          exam_id?: string
+          id?: string
+          options?: Json
+          order_index?: number
+          question?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificate_exam_questions_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "certificate_exams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      certificate_exams: {
+        Row: {
+          course_id: string
+          created_at: string
+          id: string
+          passing_score: number
+        }
+        Insert: {
+          course_id: string
+          created_at?: string
+          id?: string
+          passing_score?: number
+        }
+        Update: {
+          course_id?: string
+          created_at?: string
+          id?: string
+          passing_score?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificate_exams_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      certificates: {
+        Row: {
+          course_id: string
+          id: string
+          issued_at: string
+          recipient_name: string
+          score: number
+          total_questions: number
+          user_id: string
+        }
+        Insert: {
+          course_id: string
+          id?: string
+          issued_at?: string
+          recipient_name: string
+          score: number
+          total_questions: number
+          user_id: string
+        }
+        Update: {
+          course_id?: string
+          id?: string
+          issued_at?: string
+          recipient_name?: string
+          score?: number
+          total_questions?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "certificates_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           category: string
