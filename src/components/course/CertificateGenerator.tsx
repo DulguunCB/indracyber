@@ -57,30 +57,25 @@ const CertificateGenerator = ({
       const pageHeight = pdf.internal.pageSize.getHeight();
       pdf.addImage(img, "JPEG", 0, 0, pageWidth, pageHeight);
 
-      // Add recipient name (centered, positioned based on template)
+      // Add recipient name - centered on the long underline
+      // Position: left 67.6%, top 46.6% of page
+      const nameX = pageWidth * 0.676;
+      const nameY = pageHeight * 0.466;
       pdf.setFont("helvetica", "bold");
-      pdf.setFontSize(36);
-      pdf.setTextColor(40, 40, 40);
-      pdf.text(recipientName, pageWidth / 2, pageHeight / 2 + 5, {
+      pdf.setFontSize(32);
+      pdf.setTextColor(17, 17, 17); // #111
+      pdf.text(recipientName, nameX, nameY, {
         align: "center",
       });
 
-      // Add course name below recipient name
+      // Add date - centered above the DATE underline
+      // Position: left 59.9%, top 84.0% of page
+      const dateX = pageWidth * 0.599;
+      const dateY = pageHeight * 0.84;
       pdf.setFont("helvetica", "normal");
       pdf.setFontSize(14);
-      pdf.setTextColor(80, 80, 80);
-      pdf.text(`"${courseName}" сургалтыг амжилттай дуусгасан`, pageWidth / 2, pageHeight / 2 + 20, {
-        align: "center",
-      });
-
-      // Add date (bottom left area)
-      pdf.setFontSize(12);
-      pdf.text(formatDate(issuedAt), pageWidth * 0.25, pageHeight - 25, {
-        align: "center",
-      });
-
-      // Add score (bottom right area - as signature area substitute)
-      pdf.text(`Оноо: ${score}/${totalQuestions}`, pageWidth * 0.75, pageHeight - 25, {
+      pdf.setTextColor(85, 85, 85); // #555
+      pdf.text(formatDate(issuedAt), dateX, dateY, {
         align: "center",
       });
 
@@ -115,16 +110,34 @@ const CertificateGenerator = ({
           alt="Certificate Preview"
           className="w-full"
         />
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <p className="text-2xl font-bold text-gray-800 mt-4">{recipientName}</p>
-          <p className="text-sm text-gray-600 mt-2 px-4 text-center">
-            "{courseName}" сургалтыг амжилттай дуусгасан
-          </p>
-        </div>
-        <div className="absolute bottom-6 left-0 right-0 flex justify-between px-12 text-xs text-gray-600">
-          <span>{formatDate(issuedAt)}</span>
-          <span>Оноо: {score}/{totalQuestions}</span>
-        </div>
+        {/* Recipient name - positioned at 67.6% left, 46.6% top */}
+        <p 
+          className="absolute text-center font-extrabold"
+          style={{
+            left: "67.6%",
+            top: "46.6%",
+            width: "60%",
+            transform: "translate(-50%, -50%)",
+            fontSize: "clamp(16px, 4vw, 28px)",
+            color: "#111",
+          }}
+        >
+          {recipientName}
+        </p>
+        {/* Date - positioned at 59.9% left, 84% top */}
+        <p 
+          className="absolute text-center font-semibold"
+          style={{
+            left: "59.9%",
+            top: "84%",
+            width: "22%",
+            transform: "translate(-50%, -50%)",
+            fontSize: "clamp(8px, 1.8vw, 12px)",
+            color: "#555",
+          }}
+        >
+          {formatDate(issuedAt)}
+        </p>
       </div>
 
       <Button onClick={generatePDF} size="lg" className="gap-2" disabled={generating}>
