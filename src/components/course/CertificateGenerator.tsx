@@ -58,9 +58,9 @@ const CertificateGenerator = ({
       pdf.addImage(img, "JPEG", 0, 0, pageWidth, pageHeight);
 
       // Add recipient name - centered on the long underline
-      // Position: left 67.6%, top 46.6% of page
+      // Position: left 67.6%, top 43% of page
       const nameX = pageWidth * 0.676;
-      const nameY = pageHeight * 0.466;
+      const nameY = pageHeight * 0.43;
       pdf.setFont("helvetica", "bold");
       pdf.setFontSize(32);
       pdf.setTextColor(17, 17, 17); // #111
@@ -110,12 +110,12 @@ const CertificateGenerator = ({
           alt="Certificate Preview"
           className="w-full"
         />
-        {/* Recipient name - positioned at 67.6% left, 46.6% top */}
+        {/* Recipient name - positioned at 67.6% left, 43% top */}
         <p 
           className="absolute text-center font-extrabold"
           style={{
             left: "67.6%",
-            top: "46.6%",
+            top: "43%",
             width: "60%",
             transform: "translate(-50%, -50%)",
             fontSize: "clamp(16px, 4vw, 28px)",
