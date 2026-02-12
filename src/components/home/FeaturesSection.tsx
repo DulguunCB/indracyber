@@ -118,7 +118,7 @@ const FeaturesSection = () => {
               ))}
             </div>
             <span className="text-sm text-muted-foreground">
-              <span className="font-semibold text-foreground">1000+</span> суралцагч биднийг сонгосон
+              Суралцагчид биднийг сонгосон
             </span>
           </div>
         </div>

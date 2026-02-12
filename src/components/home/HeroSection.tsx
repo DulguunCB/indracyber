@@ -84,23 +84,6 @@ const HeroSection = () => {
               </Button>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-6 mt-12 pt-8 border-t border-primary-foreground/20">
-              {[
-                { value: "50+", label: "Сургалтууд", delay: "0.4s" },
-                { value: "1000+", label: "Суралцагчид", delay: "0.5s" },
-                { value: "20+", label: "Багш нар", delay: "0.6s" },
-              ].map((stat, index) => (
-                <div 
-                  key={index}
-                  className="text-center lg:text-left animate-count-up opacity-0" 
-                  style={{ animationDelay: stat.delay, animationFillMode: "forwards" }}
-                >
-                  <div className="text-3xl font-bold text-accent">{stat.value}</div>
-                  <div className="text-sm text-primary-foreground/70">{stat.label}</div>
-                </div>
-              ))}
-            </div>
           </div>
 
           {/* Hero Image */}
@@ -130,7 +113,7 @@ const HeroSection = () => {
                 </div>
                 <div>
                   <p className="font-semibold text-card-foreground text-sm">Веб хөгжүүлэлт</p>
-                  <p className="text-xs text-muted-foreground">15 сургалт</p>
+                  <p className="text-xs text-muted-foreground">Сургалтууд</p>
                 </div>
               </div>
             </div>
@@ -142,7 +125,7 @@ const HeroSection = () => {
                 </div>
                 <div>
                   <p className="font-semibold text-card-foreground text-sm">AI сургалт</p>
-                  <p className="text-xs text-muted-foreground">10 сургалт</p>
+                  <p className="text-xs text-muted-foreground">Сургалтууд</p>
                 </div>
               </div>
             </div>
