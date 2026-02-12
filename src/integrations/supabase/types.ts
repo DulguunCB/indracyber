@@ -513,6 +513,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_exam_questions: {
+        Args: { p_course_id: string }
+        Returns: {
+          exam_id: string
+          id: string
+          options: Json
+          order_index: number
+          question: string
+        }[]
+      }
+      get_quiz_questions: {
+        Args: { p_lesson_id: string }
+        Returns: {
+          id: string
+          options: Json
+          order_index: number
+          question: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -521,6 +540,14 @@ export type Database = {
         Returns: boolean
       }
       increment_promo_usage: { Args: { promo_id: string }; Returns: undefined }
+      submit_exam_answers: {
+        Args: { p_answers: Json; p_course_id: string; p_recipient_name: string }
+        Returns: Json
+      }
+      submit_quiz_answers: {
+        Args: { p_answers: Json; p_lesson_id: string }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
