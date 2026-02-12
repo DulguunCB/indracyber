@@ -27,6 +27,7 @@ interface Course {
   description: string | null;
   short_description: string | null;
   price: number;
+  is_free?: boolean;
   thumbnail_url: string | null;
   duration_hours: number | null;
   lessons_count: number | null;
@@ -126,8 +127,9 @@ const CourseDetail = () => {
     if (error) {
       console.error("Error fetching course:", error);
       navigate("/courses");
-    } else {
-      setCourse(data);
+    } else if (data) {
+      const courseData = { ...data, is_free: Number(data.price) === 0 };
+      setCourse(courseData);
     }
     setLoading(false);
   };
@@ -175,6 +177,42 @@ const CourseDetail = () => {
       return;
     }
     setShowBankDialog(true);
+  };
+
+  const handleEnrollFree = async () => {
+    if (!user) {
+      toast.error("Үзэхийн тулд нэвтэрнэ үү");
+      navigate("/auth");
+      return;
+    }
+    if (!course) return;
+
+    setPurchasing(true);
+    try {
+      const { error } = await supabase.from("purchases").insert({
+        user_id: user.id,
+        course_id: course.id,
+        amount: 0,
+        payment_method: "free",
+        payment_id: "free",
+        status: "completed",
+      });
+
+      if (error) {
+        if (error.code === "23505") {
+          toast.error("Та энэ сургалтыг аль хэдийн авсан байна");
+        } else {
+          throw error;
+        }
+      } else {
+        toast.success("Сургалт амжилттай нээгдлээ!");
+        setHasPurchased(true);
+      }
+    } catch (error) {
+      toast.error("Алдаа гарлаа. Дахин оролдоно уу.");
+    } finally {
+      setPurchasing(false);
+    }
   };
 
   const handleSubmitBankTransfer = async (
@@ -389,7 +427,11 @@ const CourseDetail = () => {
           <div className="lg:col-span-1">
             <div className="sticky top-24 bg-card rounded-xl p-6 shadow-card space-y-6">
               <div className="text-center">
-                <div className="text-4xl font-bold text-primary mb-2">{Number(course.price).toLocaleString()}₮</div>
+                {course.is_free ? (
+                  <div className="text-4xl font-bold text-green-600 mb-2">Үнэгүй</div>
+                ) : (
+                  <div className="text-4xl font-bold text-primary mb-2">{Number(course.price).toLocaleString()}₮</div>
+                )}
               </div>
 
               {hasPurchased ? (
@@ -412,6 +454,11 @@ const CourseDetail = () => {
                     Хүлээгдэж байна
                   </Button>
                 </div>
+              ) : course.is_free ? (
+                <Button variant="hero" size="lg" className="w-full" onClick={handleEnrollFree} disabled={purchasing}>
+                  {purchasing ? <div className="h-5 w-5 animate-spin border-2 border-white border-t-transparent rounded-full mr-2" /> : <PlayCircle className="h-5 w-5 mr-2" />}
+                  Үнэгүй үзэх
+                </Button>
               ) : (
                 <Button variant="hero" size="lg" className="w-full" onClick={handleBankTransfer}>
                   <Building2 className="h-5 w-5 mr-2" />

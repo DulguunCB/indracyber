@@ -30,6 +30,7 @@ interface Lesson {
 interface Course {
   id: string;
   title: string;
+  price: number;
 }
 
 interface CompletedLessons {
@@ -79,27 +80,56 @@ const CoursePlayer = () => {
   }, [user, courseId]);
 
   const checkAccessAndFetch = async () => {
-    // Check if user has purchased the course
-    const { data: purchase } = await supabase
-      .from("purchases")
-      .select("id")
-      .eq("user_id", user?.id)
-      .eq("course_id", courseId)
-      .single();
-
-    if (!purchase) {
-      navigate(`/courses/${courseId}`);
-      return;
-    }
-
-    // Fetch course details
+    // Fetch course details first to check if free
     const { data: courseData } = await supabase
       .from("courses")
-      .select("id, title")
+      .select("id, title, price")
       .eq("id", courseId)
       .single();
 
+    if (!courseData) {
+      navigate("/courses");
+      return;
+    }
+
     setCourse(courseData);
+
+    const isFree = Number(courseData.price) === 0;
+
+    // Check if user has purchased the course (skip for free courses)
+    if (!isFree) {
+      const { data: purchase } = await supabase
+        .from("purchases")
+        .select("id")
+        .eq("user_id", user?.id)
+        .eq("course_id", courseId)
+        .eq("status", "completed")
+        .maybeSingle();
+
+      if (!purchase) {
+        navigate(`/courses/${courseId}`);
+        return;
+      }
+    } else {
+      // For free courses, auto-create purchase if not exists
+      const { data: existingPurchase } = await supabase
+        .from("purchases")
+        .select("id")
+        .eq("user_id", user?.id)
+        .eq("course_id", courseId)
+        .maybeSingle();
+
+      if (!existingPurchase) {
+        await supabase.from("purchases").insert({
+          user_id: user!.id,
+          course_id: courseId!,
+          amount: 0,
+          payment_method: "free",
+          payment_id: "free",
+          status: "completed",
+        });
+      }
+    }
 
     // Fetch lessons
     const { data: lessonsData } = await supabase
