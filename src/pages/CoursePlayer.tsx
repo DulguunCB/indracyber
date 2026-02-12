@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams, Link, useNavigate } from "react-router-dom";
+import { useParams, Link, useNavigate, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   PlayCircle,
@@ -8,6 +8,7 @@ import {
   X,
   ClipboardList,
   Award,
+  Lock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -25,6 +26,7 @@ interface Lesson {
   duration_minutes: number | null;
   order_index: number;
   lesson_type: string;
+  is_preview: boolean | null;
 }
 
 interface Course {
@@ -40,7 +42,10 @@ interface CompletedLessons {
 const CoursePlayer = () => {
   const { courseId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const previewLessonId = searchParams.get("preview");
   const [user, setUser] = useState<User | null>(null);
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [course, setCourse] = useState<Course | null>(null);
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [currentLesson, setCurrentLesson] = useState<Lesson | null>(null);
@@ -54,30 +59,62 @@ const CoursePlayer = () => {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        if (!session?.user) {
+        setUser(session?.user ?? null);
+        if (!session?.user && !previewLessonId) {
           navigate("/auth");
-        } else {
-          setUser(session.user);
         }
       }
     );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session?.user) {
+      setUser(session?.user ?? null);
+      if (!session?.user && !previewLessonId) {
         navigate("/auth");
-      } else {
-        setUser(session.user);
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [navigate]);
+  }, [navigate, previewLessonId]);
 
   useEffect(() => {
-    if (user && courseId) {
-      checkAccessAndFetch();
+    if (courseId) {
+      if (previewLessonId) {
+        fetchPreviewLesson();
+      } else if (user) {
+        checkAccessAndFetch();
+      }
     }
-  }, [user, courseId]);
+  }, [user, courseId, previewLessonId]);
+
+  const fetchPreviewLesson = async () => {
+    const { data: courseData } = await supabase
+      .from("courses")
+      .select("id, title, price")
+      .eq("id", courseId)
+      .single();
+
+    if (!courseData) { navigate("/courses"); return; }
+    setCourse(courseData);
+
+    const { data: lessonsData } = await supabase
+      .from("lessons")
+      .select("id, title, description, vimeo_video_id, duration_minutes, order_index, lesson_type, is_preview")
+      .eq("course_id", courseId)
+      .order("order_index", { ascending: true });
+
+    if (lessonsData) {
+      setLessons(lessonsData);
+      const previewLesson = lessonsData.find(l => l.id === previewLessonId && l.lesson_type !== "quiz");
+      if (previewLesson) {
+        setCurrentLesson(previewLesson);
+        setIsPreviewMode(true);
+      } else {
+        navigate(`/courses/${courseId}`);
+        return;
+      }
+    }
+    setLoading(false);
+  };
 
   const checkAccessAndFetch = async () => {
     // Fetch course details first to check if free
@@ -134,7 +171,7 @@ const CoursePlayer = () => {
     // Fetch lessons
     const { data: lessonsData } = await supabase
       .from("lessons")
-      .select("id, title, description, vimeo_video_id, duration_minutes, order_index, lesson_type")
+      .select("id, title, description, vimeo_video_id, duration_minutes, order_index, lesson_type, is_preview")
       .eq("course_id", courseId)
       .order("order_index", { ascending: true });
 
@@ -255,7 +292,7 @@ const CoursePlayer = () => {
       {/* Header */}
       <header className="h-16 border-b border-border bg-card flex items-center px-4 gap-4">
         <Link
-          to="/dashboard"
+          to={isPreviewMode ? `/courses/${courseId}` : "/dashboard"}
           className="flex items-center gap-2 text-muted-foreground hover:text-foreground"
         >
           <ArrowLeft className="h-5 w-5" />
@@ -266,6 +303,7 @@ const CoursePlayer = () => {
         </div>
         
         {/* Progress indicator */}
+        {!isPreviewMode && (
         <div className="hidden sm:flex items-center gap-2 text-sm">
           <div className="flex items-center gap-1.5">
             <CheckCircle className="h-4 w-4 text-green-500" />
@@ -285,6 +323,7 @@ const CoursePlayer = () => {
             {lessons.length > 0 ? Math.round((Object.keys(completedLessons).length / lessons.length) * 100) : 0}%
           </span>
         </div>
+        )}
 
         <Button
           variant="ghost"
@@ -390,6 +429,7 @@ const CoursePlayer = () => {
               </p>
             </div>
             {/* Certificate Exam Button */}
+            {!isPreviewMode && (
             <div className="p-2 border-b border-border">
               <button
                 onClick={() => {
@@ -426,58 +466,66 @@ const CoursePlayer = () => {
                 </div>
               </button>
             </div>
+            )}
             <ScrollArea className="flex-1">
               <div className="p-2">
-                {lessons.map((lesson, index) => (
+                {lessons.map((lesson, index) => {
+                    const isLocked = isPreviewMode && !lesson.is_preview;
+                    return (
                     <button
                       key={lesson.id}
                       onClick={() => {
+                        if (isLocked) return;
                         setShowCertificateExam(false);
                         handleLessonSelect(lesson);
                       }}
+                      disabled={isLocked}
                       className={`
                         w-full text-left p-3 rounded-lg mb-1 transition-colors
+                        ${isLocked ? "opacity-50 cursor-not-allowed" : ""}
                         ${
                           currentLesson?.id === lesson.id && !showCertificateExam
                             ? "bg-primary/10 text-primary"
-                            : "hover:bg-muted"
+                            : isLocked ? "" : "hover:bg-muted"
                         }
                     `}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div
-                        className={`
-                          h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0
-                          ${
-                            completedLessons[lesson.id]
-                              ? "bg-green-500 text-white"
-                              : currentLesson?.id === lesson.id
-                                ? "bg-primary text-primary-foreground"
-                                : "bg-muted text-muted-foreground"
-                          }
-                        `}
-                      >
-                        {completedLessons[lesson.id] ? (
-                          <CheckCircle className="h-5 w-5" />
-                        ) : lesson.lesson_type === "quiz" ? (
-                          <ClipboardList className="h-4 w-4" />
-                        ) : (
-                          index + 1
-                        )}
-                      </div>
-                      <div className="min-w-0">
-                        <p className={`font-medium line-clamp-2 ${completedLessons[lesson.id] ? "text-green-600" : ""}`}>
-                          {lesson.title}
-                        </p>
-                        {lesson.duration_minutes && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {lesson.duration_minutes} минут
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className={`
+                            h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium flex-shrink-0
+                            ${
+                              completedLessons[lesson.id]
+                                ? "bg-green-500 text-white"
+                                : currentLesson?.id === lesson.id
+                                  ? "bg-primary text-primary-foreground"
+                                  : "bg-muted text-muted-foreground"
+                            }
+                          `}
+                        >
+                          {completedLessons[lesson.id] ? (
+                            <CheckCircle className="h-5 w-5" />
+                          ) : lesson.lesson_type === "quiz" ? (
+                            <ClipboardList className="h-4 w-4" />
+                          ) : (
+                            index + 1
+                          )}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className={`font-medium line-clamp-2 ${completedLessons[lesson.id] ? "text-green-600" : ""}`}>
+                            {lesson.title}
                           </p>
-                        )}
+                          {lesson.duration_minutes && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {lesson.duration_minutes} минут
+                            </p>
+                          )}
+                        </div>
+                        {isLocked && <Lock className="h-4 w-4 text-muted-foreground flex-shrink-0 mt-0.5" />}
                       </div>
-                    </div>
-                  </button>
-                ))}
+                    </button>
+                    );
+                  })}
               </div>
             </ScrollArea>
           </div>

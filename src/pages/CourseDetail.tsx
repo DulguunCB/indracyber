@@ -393,29 +393,35 @@ const CourseDetail = () => {
               <h2 className="text-2xl font-bold mb-4">Хичээлүүд</h2>
               <div className="space-y-2">
                 {lessons.length > 0 ? (
-                  lessons.map((lesson, index) => (
-                    <div key={lesson.id} className="flex items-center gap-4 p-4 bg-card rounded-lg shadow-sm">
-                      <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
-                        {index + 1}
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium">{lesson.title}</h4>
-                        {lesson.duration_minutes && (
-                          <span className="text-sm text-muted-foreground">{lesson.duration_minutes} минут</span>
+                  lessons.map((lesson, index) => {
+                    const isClickable = lesson.is_preview || hasPurchased;
+                    const Wrapper = isClickable ? Link : 'div';
+                    const wrapperProps = isClickable ? { to: lesson.is_preview && !hasPurchased ? `/dashboard/courses/${course.id}?preview=${lesson.id}` : `/dashboard/courses/${course.id}` } : {};
+                    return (
+                      <Wrapper key={lesson.id} {...wrapperProps as any} className={`flex items-center gap-4 p-4 bg-card rounded-lg shadow-sm ${isClickable ? 'cursor-pointer hover:bg-muted/50 transition-colors' : ''}`}>
+                        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-semibold">
+                          {index + 1}
+                        </div>
+                        <div className="flex-1">
+                          <h4 className="font-medium">{lesson.title}</h4>
+                          {lesson.duration_minutes && (
+                            <span className="text-sm text-muted-foreground">{lesson.duration_minutes} минут</span>
+                          )}
+                        </div>
+                        {lesson.is_preview ? (
+                          <Badge variant="secondary" className="gap-1 text-green-600">
+                            <PlayCircle className="h-3 w-3" />
+                            Үнэгүй үзэх
+                          </Badge>
+                        ) : hasPurchased ? (
+                          <CheckCircle className="h-5 w-5 text-green-500" />
+                        ) : (
+                          <Lock className="h-5 w-5 text-muted-foreground" />
                         )}
-                      </div>
-                      {lesson.is_preview ? (
-                        <Badge variant="secondary" className="gap-1">
-                          <PlayCircle className="h-3 w-3" />
-                          Үзэх
-                        </Badge>
-                      ) : hasPurchased ? (
-                        <CheckCircle className="h-5 w-5 text-green-500" />
-                      ) : (
-                        <Lock className="h-5 w-5 text-muted-foreground" />
-                      )}
-                    </div>
-                  ))
+                      </Wrapper>
+                    );
+                  })
+
                 ) : (
                   <p className="text-muted-foreground text-center py-8">Хичээл байхгүй байна</p>
                 )}
