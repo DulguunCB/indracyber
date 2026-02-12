@@ -12,7 +12,6 @@ interface ExamQuestion {
   id: string;
   question: string;
   options: string[];
-  correct_option_index: number;
   order_index: number;
 }
 
@@ -39,7 +38,7 @@ const CertificateExam = ({
   completedLessonsCount,
   totalLessonsCount,
 }: CertificateExamProps) => {
-  const [examId, setExamId] = useState<string | null>(null);
+  const [hasExam, setHasExam] = useState(false);
   const [questions, setQuestions] = useState<ExamQuestion[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedAnswers, setSelectedAnswers] = useState<Record<string, number>>({});
@@ -49,6 +48,7 @@ const CertificateExam = ({
   const [showNameInput, setShowNameInput] = useState(false);
   const [certificate, setCertificate] = useState<CertificateData | null>(null);
   const [passingScore, setPassingScore] = useState(70);
+  const [failedResult, setFailedResult] = useState<{ score: number; total: number; percentage: number } | null>(null);
 
   const isUnlocked = completedLessonsCount >= totalLessonsCount && totalLessonsCount > 0;
 
@@ -80,7 +80,7 @@ const CertificateExam = ({
       return;
     }
 
-    // Fetch exam
+    // Fetch exam info
     const { data: examData } = await supabase
       .from("certificate_exams")
       .select("*")
@@ -88,22 +88,18 @@ const CertificateExam = ({
       .single();
 
     if (examData) {
-      setExamId(examData.id);
+      setHasExam(true);
       setPassingScore(examData.passing_score);
 
-      // Fetch questions
-      const { data: questionsData } = await supabase
-        .from("certificate_exam_questions")
-        .select("*")
-        .eq("exam_id", examData.id)
-        .order("order_index", { ascending: true });
+      // Fetch questions via RPC (no correct_option_index exposed)
+      const { data: questionsData } = await supabase.rpc("get_exam_questions", {
+        p_course_id: courseId,
+      });
 
       if (questionsData) {
-        const parsedQuestions = questionsData.map((q) => ({
+        const parsedQuestions = questionsData.map((q: any) => ({
           ...q,
-          options: Array.isArray(q.options)
-            ? q.options
-            : JSON.parse(q.options as string),
+          options: Array.isArray(q.options) ? q.options : JSON.parse(q.options as string),
         }));
         setQuestions(parsedQuestions);
       }
@@ -112,9 +108,7 @@ const CertificateExam = ({
     setLoading(false);
   };
 
-  const handleStartExam = () => {
-    setShowNameInput(true);
-  };
+  const handleStartExam = () => setShowNameInput(true);
 
   const handleConfirmName = () => {
     if (!recipientName.trim()) {
@@ -129,56 +123,40 @@ const CertificateExam = ({
   };
 
   const handleNext = () => {
-    if (currentIndex < questions.length - 1) {
-      setCurrentIndex((prev) => prev + 1);
-    }
+    if (currentIndex < questions.length - 1) setCurrentIndex((prev) => prev + 1);
   };
 
   const handlePrev = () => {
-    if (currentIndex > 0) {
-      setCurrentIndex((prev) => prev - 1);
-    }
+    if (currentIndex > 0) setCurrentIndex((prev) => prev - 1);
   };
 
   const handleSubmit = async () => {
-    // Calculate score
-    let score = 0;
-    questions.forEach((q) => {
-      if (selectedAnswers[q.id] === q.correct_option_index) {
-        score++;
-      }
+    // Submit via server-side RPC
+    const { data, error } = await supabase.rpc("submit_exam_answers", {
+      p_course_id: courseId,
+      p_answers: selectedAnswers,
+      p_recipient_name: recipientName,
     });
 
-    const percentage = Math.round((score / questions.length) * 100);
-    const passed = percentage >= passingScore;
+    if (error) {
+      toast.error("Алдаа гарлаа");
+      return;
+    }
 
-    if (passed) {
-      // Save certificate
-      const issuedAt = new Date().toISOString();
-      const { error } = await supabase.from("certificates").insert({
-        user_id: userId,
-        course_id: courseId,
-        recipient_name: recipientName,
-        score,
-        total_questions: questions.length,
-        issued_at: issuedAt,
-      });
+    const res = data as any;
 
-      if (error) {
-        toast.error("Алдаа гарлаа");
-        return;
-      }
-
+    if (res.passed) {
       setCertificate({
         recipientName,
         courseName,
-        issuedAt,
-        score,
-        totalQuestions: questions.length,
+        issuedAt: res.issued_at,
+        score: res.score,
+        totalQuestions: res.total_questions,
       });
       toast.success("Баяр хүргэе! Сертификат авлаа!");
     } else {
-      toast.error(`Дутуу. ${passingScore}% шаардлагатай, та ${percentage}% авлаа.`);
+      setFailedResult({ score: res.score, total: res.total_questions, percentage: res.percentage });
+      toast.error(`Дутуу. ${res.passing_score}% шаардлагатай, та ${res.percentage}% авлаа.`);
     }
 
     setIsSubmitted(true);
@@ -188,6 +166,7 @@ const CertificateExam = ({
     setSelectedAnswers({});
     setCurrentIndex(0);
     setIsSubmitted(false);
+    setFailedResult(null);
   };
 
   if (loading) {
@@ -198,20 +177,16 @@ const CertificateExam = ({
     );
   }
 
-  // No exam configured
-  if (!examId || questions.length === 0) {
+  if (!hasExam || questions.length === 0) {
     return (
       <div className="text-center p-8">
         <Award className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
         <h3 className="text-lg font-semibold mb-2">Сертификатийн шалгалт</h3>
-        <p className="text-muted-foreground">
-          Энэ сургалтад сертификатийн шалгалт тохируулаагүй байна.
-        </p>
+        <p className="text-muted-foreground">Энэ сургалтад сертификатийн шалгалт тохируулаагүй байна.</p>
       </div>
     );
   }
 
-  // Course not completed - locked
   if (!isUnlocked) {
     return (
       <div className="text-center p-8">
@@ -219,20 +194,15 @@ const CertificateExam = ({
           <Lock className="h-10 w-10 text-muted-foreground" />
         </div>
         <h3 className="text-lg font-semibold mb-2">Шалгалт түгжигдсэн</h3>
-        <p className="text-muted-foreground mb-4">
-          Сертификатийн шалгалт өгөхийн тулд бүх хичээлийг дуусгана уу.
-        </p>
+        <p className="text-muted-foreground mb-4">Сертификатийн шалгалт өгөхийн тулд бүх хичээлийг дуусгана уу.</p>
         <div className="flex items-center justify-center gap-2 text-sm">
           <CheckCircle className="h-4 w-4 text-green-500" />
-          <span>
-            {completedLessonsCount}/{totalLessonsCount} хичээл дууссан
-          </span>
+          <span>{completedLessonsCount}/{totalLessonsCount} хичээл дууссан</span>
         </div>
       </div>
     );
   }
 
-  // Show certificate if passed
   if (isSubmitted && certificate) {
     return (
       <CertificateGenerator
@@ -245,16 +215,7 @@ const CertificateExam = ({
     );
   }
 
-  // Show failed result
-  if (isSubmitted && !certificate) {
-    let score = 0;
-    questions.forEach((q) => {
-      if (selectedAnswers[q.id] === q.correct_option_index) {
-        score++;
-      }
-    });
-    const percentage = Math.round((score / questions.length) * 100);
-
+  if (isSubmitted && failedResult) {
     return (
       <div className="p-6 text-center">
         <div className="inline-flex items-center justify-center h-20 w-20 rounded-full bg-red-100 mb-4">
@@ -262,12 +223,10 @@ const CertificateExam = ({
         </div>
         <h3 className="text-2xl font-bold mb-2">Дутуу</h3>
         <p className="text-muted-foreground mb-4">
-          Та {questions.length} асуултаас {score} зөв хариулсан
+          Та {failedResult.total} асуултаас {failedResult.score} зөв хариулсан
         </p>
-        <div className="text-4xl font-bold text-red-600 mb-2">{percentage}%</div>
-        <p className="text-sm text-muted-foreground mb-6">
-          Тэнцэхэд {passingScore}% шаардлагатай
-        </p>
+        <div className="text-4xl font-bold text-red-600 mb-2">{failedResult.percentage}%</div>
+        <p className="text-sm text-muted-foreground mb-6">Тэнцэхэд {passingScore}% шаардлагатай</p>
         <Button onClick={handleRetry} className="gap-2">
           <RefreshCw className="h-4 w-4" />
           Дахин оролдох
@@ -276,15 +235,12 @@ const CertificateExam = ({
     );
   }
 
-  // Name input screen
   if (showNameInput) {
     return (
       <div className="p-6 max-w-md mx-auto text-center">
         <Award className="h-16 w-16 mx-auto mb-4 text-primary" />
         <h3 className="text-xl font-bold mb-2">Сертификатийн шалгалт</h3>
-        <p className="text-muted-foreground mb-6">
-          Сертификат дээр байршуулах нэрээ оруулна уу
-        </p>
+        <p className="text-muted-foreground mb-6">Сертификат дээр байршуулах нэрээ оруулна уу</p>
         <div className="space-y-4">
           <Input
             placeholder="Таны нэр"
@@ -292,15 +248,12 @@ const CertificateExam = ({
             onChange={(e) => setRecipientName(e.target.value)}
             className="text-center text-lg"
           />
-          <Button onClick={handleConfirmName} className="w-full">
-            Шалгалт эхлүүлэх
-          </Button>
+          <Button onClick={handleConfirmName} className="w-full">Шалгалт эхлүүлэх</Button>
         </div>
       </div>
     );
   }
 
-  // Exam intro screen
   if (!showNameInput && !recipientName) {
     return (
       <div className="p-6 text-center">
@@ -308,12 +261,9 @@ const CertificateExam = ({
           <Award className="h-10 w-10 text-primary" />
         </div>
         <h3 className="text-xl font-bold mb-2">Сертификатийн шалгалт</h3>
-        <p className="text-muted-foreground mb-2">
-          Бүх хичээлийг амжилттай дуусгалаа!
-        </p>
+        <p className="text-muted-foreground mb-2">Бүх хичээлийг амжилттай дуусгалаа!</p>
         <p className="text-sm text-muted-foreground mb-6">
-          Сертификат авахын тулд шалгалт өгнө үү. ({questions.length} асуулт,{" "}
-          {passingScore}% тэнцэх оноо)
+          Сертификат авахын тулд шалгалт өгнө үү. ({questions.length} асуулт, {passingScore}% тэнцэх оноо)
         </p>
         <Button onClick={handleStartExam} size="lg" className="gap-2">
           <Award className="h-5 w-5" />
@@ -323,79 +273,56 @@ const CertificateExam = ({
     );
   }
 
-  // Exam questions
   const currentQuestion = questions[currentIndex];
   const allAnswered = questions.every((q) => selectedAnswers[q.id] !== undefined);
 
   return (
     <div className="p-6">
-      {/* Progress */}
       <div className="flex items-center gap-2 mb-6">
-        <span className="text-sm text-muted-foreground">
-          Асуулт {currentIndex + 1}/{questions.length}
-        </span>
+        <span className="text-sm text-muted-foreground">Асуулт {currentIndex + 1}/{questions.length}</span>
         <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-          <div
-            className="h-full bg-primary transition-all"
-            style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }}
-          />
+          <div className="h-full bg-primary transition-all" style={{ width: `${((currentIndex + 1) / questions.length) * 100}%` }} />
         </div>
       </div>
 
-      {/* Question */}
       <div className="mb-6">
         <h3 className="text-lg font-semibold mb-4">{currentQuestion.question}</h3>
         <RadioGroup
           value={selectedAnswers[currentQuestion.id]?.toString()}
-          onValueChange={(value) =>
-            handleAnswer(currentQuestion.id, parseInt(value))
-          }
+          onValueChange={(value) => handleAnswer(currentQuestion.id, parseInt(value))}
         >
           <div className="space-y-3">
             {currentQuestion.options.map((option, index) => (
               <div
                 key={index}
                 className={`flex items-center space-x-3 p-4 rounded-lg border transition-colors cursor-pointer ${
-                  selectedAnswers[currentQuestion.id] === index
-                    ? "border-primary bg-primary/5"
-                    : "border-border hover:border-primary/50"
+                  selectedAnswers[currentQuestion.id] === index ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
                 }`}
                 onClick={() => handleAnswer(currentQuestion.id, index)}
               >
                 <RadioGroupItem value={index.toString()} id={`cert-option-${index}`} />
-                <Label htmlFor={`cert-option-${index}`} className="flex-1 cursor-pointer">
-                  {option}
-                </Label>
+                <Label htmlFor={`cert-option-${index}`} className="flex-1 cursor-pointer">{option}</Label>
               </div>
             ))}
           </div>
         </RadioGroup>
       </div>
 
-      {/* Navigation */}
       <div className="flex items-center justify-between">
-        <Button variant="outline" onClick={handlePrev} disabled={currentIndex === 0}>
-          Өмнөх
-        </Button>
+        <Button variant="outline" onClick={handlePrev} disabled={currentIndex === 0}>Өмнөх</Button>
         <div className="flex gap-2">
           {questions.map((_, idx) => (
             <button
               key={idx}
               onClick={() => setCurrentIndex(idx)}
               className={`h-3 w-3 rounded-full transition-colors ${
-                idx === currentIndex
-                  ? "bg-primary"
-                  : selectedAnswers[questions[idx].id] !== undefined
-                  ? "bg-primary/50"
-                  : "bg-muted"
+                idx === currentIndex ? "bg-primary" : selectedAnswers[questions[idx].id] !== undefined ? "bg-primary/50" : "bg-muted"
               }`}
             />
           ))}
         </div>
         {currentIndex === questions.length - 1 ? (
-          <Button onClick={handleSubmit} disabled={!allAnswered}>
-            Илгээх
-          </Button>
+          <Button onClick={handleSubmit} disabled={!allAnswered}>Илгээх</Button>
         ) : (
           <Button onClick={handleNext}>Дараах</Button>
         )}
