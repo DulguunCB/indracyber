@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams, Link } from "react-router-dom";
-import { Eye, EyeOff, Mail, Lock, User, Loader2 } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, User, Loader2, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/mindly-logo.png";
 
 const loginSchema = z.object({
   email: z.string().email("Зөв имэйл хаяг оруулна уу"),
@@ -18,16 +18,28 @@ const registerSchema = loginSchema.extend({
   fullName: z.string().min(2, "Нэр 2-с дээш тэмдэгт байх ёстой"),
 });
 
+const phoneSchema = z.object({
+  phone: z.string().min(8, "Зөв утасны дугаар оруулна уу").max(15, "Утасны дугаар хэт урт байна"),
+});
+
+const phoneRegisterSchema = phoneSchema.extend({
+  fullName: z.string().min(2, "Нэр 2-с дээш тэмдэгт байх ёстой"),
+});
+
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(searchParams.get("mode") !== "register");
+  const [authMethod, setAuthMethod] = useState<"email" | "phone">("email");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     fullName: "",
+    phone: "",
+    otp: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -54,7 +66,91 @@ const Auth = () => {
     setErrors({ ...errors, [e.target.name]: "" });
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const formatPhone = (phone: string) => {
+    const cleaned = phone.replace(/\D/g, "");
+    if (cleaned.startsWith("976")) return `+${cleaned}`;
+    return `+976${cleaned}`;
+  };
+
+  const handlePhoneSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErrors({});
+    setLoading(true);
+
+    try {
+      if (!otpSent) {
+        // Validate phone
+        const schema = isLogin ? phoneSchema : phoneRegisterSchema;
+        const result = schema.safeParse(formData);
+        if (!result.success) {
+          const fieldErrors: Record<string, string> = {};
+          result.error.errors.forEach((err) => {
+            if (err.path[0]) {
+              fieldErrors[err.path[0] as string] = err.message;
+            }
+          });
+          setErrors(fieldErrors);
+          setLoading(false);
+          return;
+        }
+
+        const phone = formatPhone(formData.phone);
+
+        if (isLogin) {
+          const { error } = await supabase.auth.signInWithOtp({ phone });
+          if (error) {
+            toast.error(error.message);
+            setLoading(false);
+            return;
+          }
+        } else {
+          const { error } = await supabase.auth.signInWithOtp({
+            phone,
+            options: {
+              data: { full_name: formData.fullName },
+            },
+          });
+          if (error) {
+            toast.error(error.message);
+            setLoading(false);
+            return;
+          }
+        }
+
+        setOtpSent(true);
+        toast.success("Баталгаажуулах код илгээлээ!");
+      } else {
+        // Verify OTP
+        if (!formData.otp || formData.otp.length < 6) {
+          setErrors({ otp: "6 оронтой код оруулна уу" });
+          setLoading(false);
+          return;
+        }
+
+        const phone = formatPhone(formData.phone);
+        const { error } = await supabase.auth.verifyOtp({
+          phone,
+          token: formData.otp,
+          type: "sms",
+        });
+
+        if (error) {
+          toast.error("Код буруу байна. Дахин оролдоно уу.");
+          setLoading(false);
+          return;
+        }
+
+        toast.success("Амжилттай нэвтэрлээ!");
+        navigate("/dashboard");
+      }
+    } catch (error) {
+      toast.error("Алдаа гарлаа. Дахин оролдоно уу.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
     setLoading(true);
@@ -95,7 +191,7 @@ const Auth = () => {
         navigate("/dashboard");
       } else {
         const redirectUrl = `${window.location.origin}/`;
-        
+
         const { error } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
@@ -145,6 +241,12 @@ const Auth = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const switchAuthMethod = (method: "email" | "phone") => {
+    setAuthMethod(method);
+    setOtpSent(false);
+    setErrors({});
   };
 
   return (
@@ -207,89 +309,200 @@ const Auth = () => {
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {!isLogin && (
+          {/* Auth Method Tabs */}
+          <div className="flex rounded-lg bg-muted p-1">
+            <button
+              type="button"
+              onClick={() => switchAuthMethod("email")}
+              className={`flex-1 flex items-center justify-center gap-2 rounded-md py-2.5 text-sm font-medium transition-all ${
+                authMethod === "email"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Mail className="h-4 w-4" />
+              Имэйл
+            </button>
+            <button
+              type="button"
+              onClick={() => switchAuthMethod("phone")}
+              className={`flex-1 flex items-center justify-center gap-2 rounded-md py-2.5 text-sm font-medium transition-all ${
+                authMethod === "phone"
+                  ? "bg-background text-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <Phone className="h-4 w-4" />
+              Утас
+            </button>
+          </div>
+
+          {authMethod === "email" ? (
+            <form onSubmit={handleEmailSubmit} className="space-y-5">
+              {!isLogin && (
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Бүтэн нэр</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                      id="fullName"
+                      name="fullName"
+                      type="text"
+                      placeholder="Таны нэр"
+                      value={formData.fullName}
+                      onChange={handleChange}
+                      className="pl-10"
+                    />
+                  </div>
+                  {errors.fullName && (
+                    <p className="text-sm text-destructive">{errors.fullName}</p>
+                  )}
+                </div>
+              )}
+
               <div className="space-y-2">
-                <Label htmlFor="fullName">Бүтэн нэр</Label>
+                <Label htmlFor="email">Имэйл хаяг</Label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
-                    id="fullName"
-                    name="fullName"
-                    type="text"
-                    placeholder="Таны нэр"
-                    value={formData.fullName}
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="email@example.com"
+                    value={formData.email}
                     onChange={handleChange}
                     className="pl-10"
                   />
                 </div>
-                {errors.fullName && (
-                  <p className="text-sm text-destructive">{errors.fullName}</p>
+                {errors.email && (
+                  <p className="text-sm text-destructive">{errors.email}</p>
                 )}
               </div>
-            )}
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Имэйл хаяг</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="email@example.com"
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="pl-10"
-                />
+              <div className="space-y-2">
+                <Label htmlFor="password">Нууц үг</Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    value={formData.password}
+                    onChange={handleChange}
+                    className="pl-10 pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
+                {errors.password && (
+                  <p className="text-sm text-destructive">{errors.password}</p>
+                )}
               </div>
-              {errors.email && (
-                <p className="text-sm text-destructive">{errors.email}</p>
-              )}
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Нууц үг</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="pl-10 pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
+              <Button type="submit" size="lg" className="w-full" disabled={loading}>
+                {loading && <Loader2 className="h-5 w-5 animate-spin" />}
+                {isLogin ? "Нэвтрэх" : "Бүртгүүлэх"}
+              </Button>
+            </form>
+          ) : (
+            <form onSubmit={handlePhoneSubmit} className="space-y-5">
+              {!isLogin && !otpSent && (
+                <div className="space-y-2">
+                  <Label htmlFor="fullName">Бүтэн нэр</Label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                      id="fullName"
+                      name="fullName"
+                      type="text"
+                      placeholder="Таны нэр"
+                      value={formData.fullName}
+                      onChange={handleChange}
+                      className="pl-10"
+                    />
+                  </div>
+                  {errors.fullName && (
+                    <p className="text-sm text-destructive">{errors.fullName}</p>
                   )}
-                </button>
-              </div>
-              {errors.password && (
-                <p className="text-sm text-destructive">{errors.password}</p>
+                </div>
               )}
-            </div>
 
-            <Button type="submit" size="lg" className="w-full" disabled={loading}>
-              {loading && <Loader2 className="h-5 w-5 animate-spin" />}
-              {isLogin ? "Нэвтрэх" : "Бүртгүүлэх"}
-            </Button>
-          </form>
+              {!otpSent ? (
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Утасны дугаар</Label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input
+                      id="phone"
+                      name="phone"
+                      type="tel"
+                      placeholder="9912 3456"
+                      value={formData.phone}
+                      onChange={handleChange}
+                      className="pl-10"
+                    />
+                  </div>
+                  {errors.phone && (
+                    <p className="text-sm text-destructive">{errors.phone}</p>
+                  )}
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <p className="text-sm text-muted-foreground text-center">
+                    <span className="font-medium text-foreground">{formatPhone(formData.phone)}</span> дугаар руу баталгаажуулах код илгээлээ
+                  </p>
+                  <div className="space-y-2">
+                    <Label htmlFor="otp">Баталгаажуулах код</Label>
+                    <Input
+                      id="otp"
+                      name="otp"
+                      type="text"
+                      placeholder="123456"
+                      value={formData.otp}
+                      onChange={handleChange}
+                      className="text-center text-lg tracking-widest"
+                      maxLength={6}
+                    />
+                  </div>
+                  {errors.otp && (
+                    <p className="text-sm text-destructive">{errors.otp}</p>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => setOtpSent(false)}
+                    className="text-sm text-primary hover:underline w-full text-center"
+                  >
+                    Дугаар солих
+                  </button>
+                </div>
+              )}
+
+              <Button type="submit" size="lg" className="w-full" disabled={loading}>
+                {loading && <Loader2 className="h-5 w-5 animate-spin" />}
+                {otpSent ? "Баталгаажуулах" : isLogin ? "Код авах" : "Код авах"}
+              </Button>
+            </form>
+          )}
 
           <div className="text-center">
             <p className="text-muted-foreground">
               {isLogin ? "Бүртгэл байхгүй юу?" : "Аль хэдийн бүртгэлтэй юу?"}{" "}
               <button
                 type="button"
-                onClick={() => setIsLogin(!isLogin)}
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setOtpSent(false);
+                }}
                 className="text-primary font-medium hover:underline"
               >
                 {isLogin ? "Бүртгүүлэх" : "Нэвтрэх"}
