@@ -96,11 +96,15 @@ const CourseCard = ({
         </div>
 
         <div className="flex items-center justify-between pt-3 border-t border-border">
-          <span className="text-2xl font-bold text-primary">
-            {price.toLocaleString()}₮
-          </span>
+          {price === 0 ? (
+            <span className="text-2xl font-bold text-green-600">Үнэгүй</span>
+          ) : (
+            <span className="text-2xl font-bold text-primary">
+              {price.toLocaleString()}₮
+            </span>
+          )}
           <span className="text-sm font-medium text-accent group-hover:underline">
-            Худалдаж авах →
+            {price === 0 ? "Үзэх →" : "Худалдаж авах →"}
           </span>
         </div>
       </div>
