@@ -65,8 +65,8 @@ const HeroSection = () => {
             </h1>
 
             <p className="text-lg md:text-xl text-primary-foreground/80 mb-8 max-w-xl mx-auto lg:mx-0 animate-fade-in-left" style={{ animationDelay: "0.2s" }}>
-              Монголын шилдэг багш нартай хамтран бэлтгэсэн чанартай сургалтуудаас суралц. Веб хөгжүүлэлт, програмчлал,
-              AI гэх мэт олон төрлийн сургалтууд.
+              AI Coding, Vibe Coding, Веб хөгжүүлэлт, програмчлал зэрэг
+              coding чиглэлийн чанартай сургалтуудаас суралц.
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start animate-fade-in-up" style={{ animationDelay: "0.3s" }}>

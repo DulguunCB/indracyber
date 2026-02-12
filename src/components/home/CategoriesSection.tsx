@@ -1,31 +1,31 @@
 import { Link } from "react-router-dom";
-import { Code, BookOpen, GraduationCap, ArrowRight } from "lucide-react";
+import { Code, Sparkles, Terminal, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const categories = [
   {
-    id: "ielts",
-    icon: BookOpen,
-    title: "IELTS",
-    description: "IELTS шалгалтын бэлтгэл, Listening, Reading, Writing, Speaking",
-    coursesCount: 15,
-    color: "from-blue-500 to-cyan-500",
+    id: "vibe-coding",
+    icon: Sparkles,
+    title: "Vibe Coding (AI Coding)",
+    description: "AI ашиглан код бичих, Lovable, Cursor, Bolt зэрэг AI хэрэгслүүд",
+    coursesCount: 10,
+    color: "from-purple-500 to-pink-500",
   },
   {
     id: "programming",
     icon: Code,
     title: "Програмчлал",
-    description: "Python, Java, C++ зэрэг програмчлалын хэлнүүд болон алгоритм",
+    description: "Python, JavaScript, React зэрэг програмчлалын хэлнүүд болон framework-ууд",
     coursesCount: 20,
-    color: "from-purple-500 to-pink-500",
+    color: "from-blue-500 to-cyan-500",
   },
   {
-    id: "sat",
-    icon: GraduationCap,
-    title: "SAT",
-    description: "SAT шалгалтын бэлтгэл, Math, Reading, Writing секцүүд",
-    coursesCount: 10,
-    color: "from-amber-500 to-orange-500",
+    id: "coding-it",
+    icon: Terminal,
+    title: "Coding & IT",
+    description: "Веб хөгжүүлэлт, мобайл апп, DevOps болон IT дэд бүтцийн сургалтууд",
+    coursesCount: 15,
+    color: "from-green-500 to-emerald-500",
   },
 ];
 
