@@ -311,18 +311,8 @@ const Auth = () => {
             Мэргэжлийн ур чадвараа хөгжүүл
           </h2>
           <p className="text-xl text-primary-foreground/80 mb-8">
-            50+ сургалт, 1000+ суралцагч, Монголын шилдэг багш нар
+            Монголын шилдэг багш нартай хамтран суралц
           </p>
-          <div className="flex justify-center gap-4">
-            <div className="bg-primary-foreground/10 backdrop-blur rounded-lg px-6 py-4">
-              <div className="text-3xl font-bold text-accent">50+</div>
-              <div className="text-primary-foreground/70">Сургалт</div>
-            </div>
-            <div className="bg-primary-foreground/10 backdrop-blur rounded-lg px-6 py-4">
-              <div className="text-3xl font-bold text-accent">1000+</div>
-              <div className="text-primary-foreground/70">Суралцагч</div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
