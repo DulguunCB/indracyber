@@ -9,20 +9,21 @@ import { toast } from "sonner";
 import { z } from "zod";
 import logo from "@/assets/mindly-logo.png";
 
-const loginSchema = z.object({
+const emailLoginSchema = z.object({
   email: z.string().email("Зөв имэйл хаяг оруулна уу"),
   password: z.string().min(6, "Нууц үг 6-с дээш тэмдэгт байх ёстой"),
 });
 
-const registerSchema = loginSchema.extend({
+const emailRegisterSchema = emailLoginSchema.extend({
   fullName: z.string().min(2, "Нэр 2-с дээш тэмдэгт байх ёстой"),
 });
 
-const phoneSchema = z.object({
-  phone: z.string().min(8, "Зөв утасны дугаар оруулна уу").max(15, "Утасны дугаар хэт урт байна"),
+const phoneLoginSchema = z.object({
+  phone: z.string().min(8, "Зөв утасны дугаар оруулна уу").max(15),
+  password: z.string().min(6, "Нууц үг 6-с дээш тэмдэгт байх ёстой"),
 });
 
-const phoneRegisterSchema = phoneSchema.extend({
+const phoneRegisterSchema = phoneLoginSchema.extend({
   fullName: z.string().min(2, "Нэр 2-с дээш тэмдэгт байх ёстой"),
 });
 
@@ -33,13 +34,11 @@ const Auth = () => {
   const [authMethod, setAuthMethod] = useState<"email" | "phone">("email");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [otpSent, setOtpSent] = useState(false);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
     fullName: "",
     phone: "",
-    otp: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -72,22 +71,64 @@ const Auth = () => {
     return `+976${cleaned}`;
   };
 
-  const handlePhoneSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors({});
     setLoading(true);
 
     try {
-      if (!otpSent) {
-        // Validate phone
-        const schema = isLogin ? phoneSchema : phoneRegisterSchema;
+      if (authMethod === "email") {
+        const schema = isLogin ? emailLoginSchema : emailRegisterSchema;
         const result = schema.safeParse(formData);
         if (!result.success) {
           const fieldErrors: Record<string, string> = {};
           result.error.errors.forEach((err) => {
-            if (err.path[0]) {
-              fieldErrors[err.path[0] as string] = err.message;
-            }
+            if (err.path[0]) fieldErrors[err.path[0] as string] = err.message;
+          });
+          setErrors(fieldErrors);
+          setLoading(false);
+          return;
+        }
+
+        if (isLogin) {
+          const { error } = await supabase.auth.signInWithPassword({
+            email: formData.email,
+            password: formData.password,
+          });
+          if (error) {
+            toast.error(error.message.includes("Invalid login credentials")
+              ? "Имэйл эсвэл нууц үг буруу байна"
+              : error.message);
+            setLoading(false);
+            return;
+          }
+          toast.success("Амжилттай нэвтэрлээ!");
+        } else {
+          const { error } = await supabase.auth.signUp({
+            email: formData.email,
+            password: formData.password,
+            options: {
+              emailRedirectTo: `${window.location.origin}/`,
+              data: { full_name: formData.fullName },
+            },
+          });
+          if (error) {
+            toast.error(error.message.includes("User already registered")
+              ? "Энэ имэйл хаягаар бүртгэгдсэн хэрэглэгч байна"
+              : error.message);
+            setLoading(false);
+            return;
+          }
+          toast.success("Амжилттай бүртгэгдлээ!");
+        }
+      } else {
+        // Phone auth
+        const schema = isLogin ? phoneLoginSchema : phoneRegisterSchema;
+        const result = schema.safeParse(formData);
+        if (!result.success) {
+          const fieldErrors: Record<string, string> = {};
+          result.error.errors.forEach((err) => {
+            if (err.path[0]) fieldErrors[err.path[0] as string] = err.message;
           });
           setErrors(fieldErrors);
           setLoading(false);
@@ -97,125 +138,38 @@ const Auth = () => {
         const phone = formatPhone(formData.phone);
 
         if (isLogin) {
-          const { error } = await supabase.auth.signInWithOtp({ phone });
+          const { error } = await supabase.auth.signInWithPassword({
+            phone,
+            password: formData.password,
+          });
           if (error) {
-            toast.error(error.message);
+            toast.error(error.message.includes("Invalid login credentials")
+              ? "Утасны дугаар эсвэл нууц үг буруу байна"
+              : error.message);
             setLoading(false);
             return;
           }
+          toast.success("Амжилттай нэвтэрлээ!");
         } else {
-          const { error } = await supabase.auth.signInWithOtp({
+          const { error } = await supabase.auth.signUp({
             phone,
+            password: formData.password,
             options: {
               data: { full_name: formData.fullName },
             },
           });
           if (error) {
-            toast.error(error.message);
+            toast.error(error.message.includes("already registered")
+              ? "Энэ дугаараар бүртгэгдсэн хэрэглэгч байна"
+              : error.message);
             setLoading(false);
             return;
           }
+          toast.success("Амжилттай бүртгэгдлээ!");
         }
-
-        setOtpSent(true);
-        toast.success("Баталгаажуулах код илгээлээ!");
-      } else {
-        // Verify OTP
-        if (!formData.otp || formData.otp.length < 6) {
-          setErrors({ otp: "6 оронтой код оруулна уу" });
-          setLoading(false);
-          return;
-        }
-
-        const phone = formatPhone(formData.phone);
-        const { error } = await supabase.auth.verifyOtp({
-          phone,
-          token: formData.otp,
-          type: "sms",
-        });
-
-        if (error) {
-          toast.error("Код буруу байна. Дахин оролдоно уу.");
-          setLoading(false);
-          return;
-        }
-
-        toast.success("Амжилттай нэвтэрлээ!");
-        navigate("/dashboard");
-      }
-    } catch (error) {
-      toast.error("Алдаа гарлаа. Дахин оролдоно уу.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleEmailSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setErrors({});
-    setLoading(true);
-
-    try {
-      const schema = isLogin ? loginSchema : registerSchema;
-      const result = schema.safeParse(formData);
-
-      if (!result.success) {
-        const fieldErrors: Record<string, string> = {};
-        result.error.errors.forEach((err) => {
-          if (err.path[0]) {
-            fieldErrors[err.path[0] as string] = err.message;
-          }
-        });
-        setErrors(fieldErrors);
-        setLoading(false);
-        return;
       }
 
-      if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: formData.email,
-          password: formData.password,
-        });
-
-        if (error) {
-          if (error.message.includes("Invalid login credentials")) {
-            toast.error("Имэйл эсвэл нууц үг буруу байна");
-          } else {
-            toast.error(error.message);
-          }
-          setLoading(false);
-          return;
-        }
-
-        toast.success("Амжилттай нэвтэрлээ!");
-        navigate("/dashboard");
-      } else {
-        const redirectUrl = `${window.location.origin}/`;
-
-        const { error } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            emailRedirectTo: redirectUrl,
-            data: {
-              full_name: formData.fullName,
-            },
-          },
-        });
-
-        if (error) {
-          if (error.message.includes("User already registered")) {
-            toast.error("Энэ имэйл хаягаар бүртгэгдсэн хэрэглэгч байна");
-          } else {
-            toast.error(error.message);
-          }
-          setLoading(false);
-          return;
-        }
-
-        toast.success("Амжилттай бүртгэгдлээ! Нэвтрэх хуудас руу шилжиж байна...");
-        setIsLogin(true);
-      }
+      navigate("/dashboard");
     } catch (error) {
       toast.error("Алдаа гарлаа. Дахин оролдоно уу.");
     } finally {
@@ -232,21 +186,12 @@ const Auth = () => {
           redirectTo: `${window.location.origin}/dashboard`,
         },
       });
-
-      if (error) {
-        toast.error(error.message);
-      }
+      if (error) toast.error(error.message);
     } catch (error) {
       toast.error("Google-ээр нэвтрэхэд алдаа гарлаа");
     } finally {
       setLoading(false);
     }
-  };
-
-  const switchAuthMethod = (method: "email" | "phone") => {
-    setAuthMethod(method);
-    setOtpSent(false);
-    setErrors({});
   };
 
   return (
@@ -278,22 +223,10 @@ const Auth = () => {
             disabled={loading}
           >
             <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
-              <path
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                fill="#4285F4"
-              />
-              <path
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                fill="#34A853"
-              />
-              <path
-                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                fill="#FBBC05"
-              />
-              <path
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                fill="#EA4335"
-              />
+              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
+              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
             </svg>
             Google-ээр нэвтрэх
           </Button>
@@ -303,9 +236,7 @@ const Auth = () => {
               <span className="w-full border-t border-border" />
             </div>
             <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Эсвэл
-              </span>
+              <span className="bg-background px-2 text-muted-foreground">Эсвэл</span>
             </div>
           </div>
 
@@ -313,7 +244,7 @@ const Auth = () => {
           <div className="flex rounded-lg bg-muted p-1">
             <button
               type="button"
-              onClick={() => switchAuthMethod("email")}
+              onClick={() => { setAuthMethod("email"); setErrors({}); }}
               className={`flex-1 flex items-center justify-center gap-2 rounded-md py-2.5 text-sm font-medium transition-all ${
                 authMethod === "email"
                   ? "bg-background text-foreground shadow-sm"
@@ -325,7 +256,7 @@ const Auth = () => {
             </button>
             <button
               type="button"
-              onClick={() => switchAuthMethod("phone")}
+              onClick={() => { setAuthMethod("phone"); setErrors({}); }}
               className={`flex-1 flex items-center justify-center gap-2 rounded-md py-2.5 text-sm font-medium transition-all ${
                 authMethod === "phone"
                   ? "bg-background text-foreground shadow-sm"
@@ -337,29 +268,29 @@ const Auth = () => {
             </button>
           </div>
 
-          {authMethod === "email" ? (
-            <form onSubmit={handleEmailSubmit} className="space-y-5">
-              {!isLogin && (
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Бүтэн нэр</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                    <Input
-                      id="fullName"
-                      name="fullName"
-                      type="text"
-                      placeholder="Таны нэр"
-                      value={formData.fullName}
-                      onChange={handleChange}
-                      className="pl-10"
-                    />
-                  </div>
-                  {errors.fullName && (
-                    <p className="text-sm text-destructive">{errors.fullName}</p>
-                  )}
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label htmlFor="fullName">Бүтэн нэр</Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Input
+                    id="fullName"
+                    name="fullName"
+                    type="text"
+                    placeholder="Таны нэр"
+                    value={formData.fullName}
+                    onChange={handleChange}
+                    className="pl-10"
+                  />
                 </div>
-              )}
+                {errors.fullName && (
+                  <p className="text-sm text-destructive">{errors.fullName}</p>
+                )}
+              </div>
+            )}
 
+            {authMethod === "email" ? (
               <div className="space-y-2">
                 <Label htmlFor="email">Имэйл хаяг</Label>
                 <div className="relative">
@@ -378,131 +309,65 @@ const Auth = () => {
                   <p className="text-sm text-destructive">{errors.email}</p>
                 )}
               </div>
-
+            ) : (
               <div className="space-y-2">
-                <Label htmlFor="password">Нууц үг</Label>
+                <Label htmlFor="phone">Утасны дугаар</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                   <Input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    placeholder="••••••••"
-                    value={formData.password}
+                    id="phone"
+                    name="phone"
+                    type="tel"
+                    placeholder="9912 3456"
+                    value={formData.phone}
                     onChange={handleChange}
-                    className="pl-10 pr-10"
+                    className="pl-10"
                   />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5" />
-                    ) : (
-                      <Eye className="h-5 w-5" />
-                    )}
-                  </button>
                 </div>
-                {errors.password && (
-                  <p className="text-sm text-destructive">{errors.password}</p>
+                {errors.phone && (
+                  <p className="text-sm text-destructive">{errors.phone}</p>
                 )}
               </div>
+            )}
 
-              <Button type="submit" size="lg" className="w-full" disabled={loading}>
-                {loading && <Loader2 className="h-5 w-5 animate-spin" />}
-                {isLogin ? "Нэвтрэх" : "Бүртгүүлэх"}
-              </Button>
-            </form>
-          ) : (
-            <form onSubmit={handlePhoneSubmit} className="space-y-5">
-              {!isLogin && !otpSent && (
-                <div className="space-y-2">
-                  <Label htmlFor="fullName">Бүтэн нэр</Label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                    <Input
-                      id="fullName"
-                      name="fullName"
-                      type="text"
-                      placeholder="Таны нэр"
-                      value={formData.fullName}
-                      onChange={handleChange}
-                      className="pl-10"
-                    />
-                  </div>
-                  {errors.fullName && (
-                    <p className="text-sm text-destructive">{errors.fullName}</p>
-                  )}
-                </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Нууц үг</Label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                <Input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleChange}
+                  className="pl-10 pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
+              {errors.password && (
+                <p className="text-sm text-destructive">{errors.password}</p>
               )}
+            </div>
 
-              {!otpSent ? (
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Утасны дугаар</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
-                    <Input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      placeholder="9912 3456"
-                      value={formData.phone}
-                      onChange={handleChange}
-                      className="pl-10"
-                    />
-                  </div>
-                  {errors.phone && (
-                    <p className="text-sm text-destructive">{errors.phone}</p>
-                  )}
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground text-center">
-                    <span className="font-medium text-foreground">{formatPhone(formData.phone)}</span> дугаар руу баталгаажуулах код илгээлээ
-                  </p>
-                  <div className="space-y-2">
-                    <Label htmlFor="otp">Баталгаажуулах код</Label>
-                    <Input
-                      id="otp"
-                      name="otp"
-                      type="text"
-                      placeholder="123456"
-                      value={formData.otp}
-                      onChange={handleChange}
-                      className="text-center text-lg tracking-widest"
-                      maxLength={6}
-                    />
-                  </div>
-                  {errors.otp && (
-                    <p className="text-sm text-destructive">{errors.otp}</p>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setOtpSent(false)}
-                    className="text-sm text-primary hover:underline w-full text-center"
-                  >
-                    Дугаар солих
-                  </button>
-                </div>
-              )}
-
-              <Button type="submit" size="lg" className="w-full" disabled={loading}>
-                {loading && <Loader2 className="h-5 w-5 animate-spin" />}
-                {otpSent ? "Баталгаажуулах" : isLogin ? "Код авах" : "Код авах"}
-              </Button>
-            </form>
-          )}
+            <Button type="submit" size="lg" className="w-full" disabled={loading}>
+              {loading && <Loader2 className="h-5 w-5 animate-spin" />}
+              {isLogin ? "Нэвтрэх" : "Бүртгүүлэх"}
+            </Button>
+          </form>
 
           <div className="text-center">
             <p className="text-muted-foreground">
               {isLogin ? "Бүртгэл байхгүй юу?" : "Аль хэдийн бүртгэлтэй юу?"}{" "}
               <button
                 type="button"
-                onClick={() => {
-                  setIsLogin(!isLogin);
-                  setOtpSent(false);
-                }}
+                onClick={() => setIsLogin(!isLogin)}
                 className="text-primary font-medium hover:underline"
               >
                 {isLogin ? "Бүртгүүлэх" : "Нэвтрэх"}
@@ -518,7 +383,6 @@ const Auth = () => {
           <div className="absolute top-0 right-0 w-96 h-96 bg-accent rounded-full blur-3xl" />
           <div className="absolute bottom-0 left-0 w-96 h-96 bg-accent rounded-full blur-3xl" />
         </div>
-        
         <div className="relative text-center px-12">
           <h2 className="text-4xl font-bold text-primary-foreground mb-6">
             Мэргэжлийн ур чадвараа хөгжүүл
