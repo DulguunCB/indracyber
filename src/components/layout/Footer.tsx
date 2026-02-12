@@ -10,7 +10,7 @@ const Footer = () => {
           {/* Brand */}
           <div className="space-y-4">
             <Link to="/" className="flex items-center gap-2">
-              <img src={logo} alt="INDRA Cyber Academy" className="h-20 w-auto brightness-0 invert" />
+              <img src={logo} alt="Mindly Academy" className="h-20 w-auto brightness-0 invert" />
             </Link>
             <p className="text-primary-foreground/70 text-sm">
               Монголын тэргүүлэх онлайн сургалтын платформ. Мэргэжлийн багш нартай хамтран чанартай боловсролыг танд хүргэнэ.
@@ -77,8 +77,8 @@ const Footer = () => {
             <ul className="space-y-3 text-sm text-primary-foreground/70">
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-accent" />
-                <a href="mailto:info@indracyber.mn" className="hover:text-accent transition-colors">
-                  info@indracyber.mn
+                <a href="mailto:info@mindly.mn" className="hover:text-accent transition-colors">
+                  info@mindly.mn
                 </a>
               </li>
               <li className="flex items-center gap-2">
@@ -96,7 +96,7 @@ const Footer = () => {
         </div>
 
         <div className="border-t border-primary-foreground/20 mt-8 pt-8 text-center text-sm text-primary-foreground/60">
-          <p>© {new Date().getFullYear()} INDRA Cyber Academy. Бүх эрх хуулиар хамгаалагдсан.</p>
+          <p>© {new Date().getFullYear()} Mindly Academy. Бүх эрх хуулиар хамгаалагдсан.</p>
         </div>
       </div>
     </footer>

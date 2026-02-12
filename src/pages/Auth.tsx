@@ -154,7 +154,7 @@ const Auth = () => {
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
             <Link to="/" className="inline-block mb-8">
-              <img src={logo} alt="INDRA Cyber Academy" className="h-16 w-auto" />
+              <img src={logo} alt="Mindly Academy" className="h-16 w-auto" />
             </Link>
             <h1 className="text-3xl font-bold text-foreground mb-2">
               {isLogin ? "Тавтай морил!" : "Бүртгүүлэх"}
