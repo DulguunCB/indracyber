@@ -48,9 +48,9 @@ const HeroSection = () => {
             </div>
 
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-primary-foreground mb-6 leading-tight animate-fade-in-left" style={{ animationDelay: "0.1s" }}>
-              Мэргэжлийн ур чадвараа{" "}
+              AI-тай хосолсон{" "}
               <span className="relative">
-                <span className="text-accent">онлайнаар</span>
+                <span className="text-accent">шинэ үеийн</span>
                 <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 200 12" fill="none">
                   <path 
                     d="M2 10C50 4 150 4 198 10" 
@@ -61,7 +61,7 @@ const HeroSection = () => {
                   />
                 </svg>
               </span>{" "}
-              хөгжүүл
+              програмчлалд суралц
             </h1>
 
             <p className="text-lg md:text-xl text-primary-foreground/80 mb-8 max-w-xl mx-auto lg:mx-0 animate-fade-in-left" style={{ animationDelay: "0.2s" }}>
