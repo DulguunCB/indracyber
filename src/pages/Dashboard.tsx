@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { BookOpen, PlayCircle, Clock, GraduationCap, Loader2, CheckCircle2, User as UserIcon } from "lucide-react";
+import { BookOpen, PlayCircle, Clock, GraduationCap, Loader2, CheckCircle2, User as UserIcon, Award, Download } from "lucide-react";
 import Layout from "@/components/layout/Layout";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -8,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { User } from "@supabase/supabase-js";
+import CertificateGenerator from "@/components/course/CertificateGenerator";
 
 interface PurchasedCourse {
   id: string;
@@ -30,6 +31,18 @@ interface CourseProgress {
   };
 }
 
+interface Certificate {
+  id: string;
+  course_id: string;
+  recipient_name: string;
+  score: number;
+  total_questions: number;
+  issued_at: string;
+  courses: {
+    title: string;
+  };
+}
+
 const Dashboard = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
@@ -37,6 +50,8 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<{ full_name: string | null } | null>(null);
   const [courseProgress, setCourseProgress] = useState<CourseProgress>({});
+  const [certificates, setCertificates] = useState<Certificate[]>([]);
+  const [selectedCert, setSelectedCert] = useState<Certificate | null>(null);
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -134,6 +149,15 @@ const Dashboard = () => {
       }
     }
 
+    // Fetch certificates
+    const { data: certsData } = await supabase
+      .from("certificates")
+      .select("id, course_id, recipient_name, score, total_questions, issued_at, courses(title)")
+      .eq("user_id", user?.id)
+      .order("issued_at", { ascending: false });
+
+    setCertificates(certsData as Certificate[] || []);
+
     setLoading(false);
   };
 
@@ -219,7 +243,7 @@ const Dashboard = () => {
                 <GraduationCap className="h-6 w-6 text-purple-600" />
               </div>
               <div>
-                <div className="text-2xl font-bold">0</div>
+                <div className="text-2xl font-bold">{certificates.length}</div>
                 <div className="text-sm text-muted-foreground">Сертификат</div>
               </div>
             </div>
@@ -363,6 +387,64 @@ const Dashboard = () => {
             </div>
           )}
         </div>
+
+        {/* Certificates Section */}
+        {certificates.length > 0 && (
+          <div className="mt-12">
+            <h2 className="text-2xl font-bold mb-6">Миний сертификатууд</h2>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {certificates.map((cert) => (
+                <div key={cert.id} className="bg-card rounded-xl p-6 shadow-card border border-border">
+                  <div className="flex items-start gap-4">
+                    <div className="h-12 w-12 rounded-lg bg-amber-100 flex items-center justify-center flex-shrink-0">
+                      <Award className="h-6 w-6 text-amber-600" />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold truncate">{cert.courses?.title}</h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {cert.recipient_name}
+                      </p>
+                      <p className="text-sm text-muted-foreground">
+                        Оноо: {cert.score}/{cert.total_questions} ({Math.round((cert.score / cert.total_questions) * 100)}%)
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {new Date(cert.issued_at).toLocaleDateString("mn-MN", { year: "numeric", month: "long", day: "numeric" })}
+                      </p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full mt-4 gap-2"
+                    onClick={() => setSelectedCert(cert)}
+                  >
+                    <Download className="h-4 w-4" />
+                    Сертификат татах
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Certificate Download Dialog */}
+        {selectedCert && (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setSelectedCert(null)}>
+            <div className="bg-card rounded-xl max-w-2xl w-full max-h-[90vh] overflow-auto" onClick={(e) => e.stopPropagation()}>
+              <div className="flex items-center justify-between p-4 border-b border-border">
+                <h3 className="font-semibold">{selectedCert.courses?.title} - Сертификат</h3>
+                <Button variant="ghost" size="sm" onClick={() => setSelectedCert(null)}>✕</Button>
+              </div>
+              <CertificateGenerator
+                recipientName={selectedCert.recipient_name}
+                courseName={selectedCert.courses?.title || ""}
+                issuedAt={selectedCert.issued_at}
+                score={selectedCert.score}
+                totalQuestions={selectedCert.total_questions}
+              />
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   );
