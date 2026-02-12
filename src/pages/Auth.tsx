@@ -27,6 +27,12 @@ const phoneRegisterSchema = phoneLoginSchema.extend({
   fullName: z.string().min(2, "Нэр 2-с дээш тэмдэгт байх ёстой"),
 });
 
+const phoneToEmail = (phone: string) => {
+  const cleaned = phone.replace(/\D/g, "");
+  const number = cleaned.startsWith("976") ? cleaned : `976${cleaned}`;
+  return `phone_${number}@mindly.local`;
+};
+
 const Auth = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -63,12 +69,6 @@ const Auth = () => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
     setErrors({ ...errors, [e.target.name]: "" });
-  };
-
-  const formatPhone = (phone: string) => {
-    const cleaned = phone.replace(/\D/g, "");
-    if (cleaned.startsWith("976")) return `+${cleaned}`;
-    return `+976${cleaned}`;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -122,7 +122,7 @@ const Auth = () => {
           toast.success("Амжилттай бүртгэгдлээ!");
         }
       } else {
-        // Phone auth
+        // Phone auth via internal email
         const schema = isLogin ? phoneLoginSchema : phoneRegisterSchema;
         const result = schema.safeParse(formData);
         if (!result.success) {
@@ -135,11 +135,11 @@ const Auth = () => {
           return;
         }
 
-        const phone = formatPhone(formData.phone);
+        const internalEmail = phoneToEmail(formData.phone);
 
         if (isLogin) {
           const { error } = await supabase.auth.signInWithPassword({
-            phone,
+            email: internalEmail,
             password: formData.password,
           });
           if (error) {
@@ -151,20 +151,32 @@ const Auth = () => {
           }
           toast.success("Амжилттай нэвтэрлээ!");
         } else {
-          const { error } = await supabase.auth.signUp({
-            phone,
+          const { data, error } = await supabase.auth.signUp({
+            email: internalEmail,
             password: formData.password,
             options: {
-              data: { full_name: formData.fullName },
+              data: {
+                full_name: formData.fullName,
+                phone_number: formData.phone,
+              },
             },
           });
           if (error) {
-            toast.error(error.message.includes("already registered")
+            toast.error(error.message.includes("User already registered")
               ? "Энэ дугаараар бүртгэгдсэн хэрэглэгч байна"
               : error.message);
             setLoading(false);
             return;
           }
+
+          // Update profile with phone number
+          if (data.user) {
+            await supabase
+              .from("profiles")
+              .update({ phone_number: formData.phone })
+              .eq("user_id", data.user.id);
+          }
+
           toast.success("Амжилттай бүртгэгдлээ!");
         }
       }
