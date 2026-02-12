@@ -184,7 +184,7 @@ const AdminCourseRevenue = () => {
       <aside className="w-64 bg-sidebar text-sidebar-foreground hidden lg:flex flex-col">
         <div className="p-6 border-b border-sidebar-border">
           <Link to="/" className="flex items-center gap-2">
-            <img src={logo} alt="INDRA Cyber Academy" className="h-12 w-auto" />
+            <img src={logo} alt="Mindly Academy" className="h-12 w-auto" />
           </Link>
         </div>
 
