@@ -8,7 +8,7 @@ const categories = [
     icon: Sparkles,
     title: "Vibe Coding (AI Coding)",
     description: "AI ашиглан код бичих, Lovable, Cursor, Bolt зэрэг AI хэрэгслүүд",
-    coursesCount: 10,
+    coursesCount: null,
     color: "from-purple-500 to-pink-500",
   },
   {
@@ -16,7 +16,7 @@ const categories = [
     icon: Code,
     title: "Програмчлал",
     description: "Python, JavaScript, React зэрэг програмчлалын хэлнүүд болон framework-ууд",
-    coursesCount: 20,
+    coursesCount: null,
     color: "from-blue-500 to-cyan-500",
   },
   {
@@ -24,7 +24,7 @@ const categories = [
     icon: Terminal,
     title: "Coding & IT",
     description: "Веб хөгжүүлэлт, мобайл апп, DevOps болон IT дэд бүтцийн сургалтууд",
-    coursesCount: 15,
+    coursesCount: null,
     color: "from-green-500 to-emerald-500",
   },
 ];
@@ -70,10 +70,7 @@ const CategoriesSection = () => {
                   {category.description}
                 </p>
 
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    {category.coursesCount} сургалт
-                  </span>
+                <div className="flex items-center justify-end">
                   <span className="flex items-center gap-1 text-primary font-medium group-hover:gap-2 transition-all">
                     Үзэх
                     <ArrowRight className="h-4 w-4" />
