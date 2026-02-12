@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Menu, X, User, LogOut, LayoutDashboard, Settings, BookOpen } from "lucide-react";
-import logo from "@/assets/logo.png";
+import logo from "@/assets/mindly-logo.png";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
