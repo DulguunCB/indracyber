@@ -4,8 +4,8 @@ import {
   Dialog,
   DialogContent,
   DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+  DialogTitle } from
+"@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
@@ -35,7 +35,7 @@ const generateTransferCode = () => {
 const BANK_DETAILS = {
   bankName: "Хаан Банк",
   accountNumber: "5012345678",
-  accountName: "Нэгдсэн Сургалтын Төв ХХК",
+  accountName: "Нэгдсэн Сургалтын Төв ХХК"
 };
 
 const BankTransferDialog = ({
@@ -44,7 +44,7 @@ const BankTransferDialog = ({
   courseTitle,
   price,
   onSubmit,
-  isSubmitting,
+  isSubmitting
 }: BankTransferDialogProps) => {
   const [confirmed, setConfirmed] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
@@ -53,9 +53,9 @@ const BankTransferDialog = ({
   const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
   const [checkingPromo, setCheckingPromo] = useState(false);
 
-  const discountAmount = appliedPromo 
-    ? Math.round(price * appliedPromo.discount_percent / 100) 
-    : 0;
+  const discountAmount = appliedPromo ?
+  Math.round(price * appliedPromo.discount_percent / 100) :
+  0;
   const finalPrice = price - discountAmount;
   const isFree = finalPrice === 0;
 
@@ -83,12 +83,12 @@ const BankTransferDialog = ({
 
     setCheckingPromo(true);
     try {
-      const { data, error } = await supabase
-        .from("promo_codes")
-        .select("id, code, discount_percent, usage_limit, used_count")
-        .eq("code", promoCodeInput.toUpperCase().trim())
-        .eq("is_active", true)
-        .maybeSingle();
+      const { data, error } = await supabase.
+      from("promo_codes").
+      select("id, code, discount_percent, usage_limit, used_count").
+      eq("code", promoCodeInput.toUpperCase().trim()).
+      eq("is_active", true).
+      maybeSingle();
 
       if (error) throw error;
 
@@ -106,7 +106,7 @@ const BankTransferDialog = ({
       setAppliedPromo({
         id: data.id,
         code: data.code,
-        discount_percent: data.discount_percent,
+        discount_percent: data.discount_percent
       });
       setPromoCodeInput("");
       toast.success(`${data.discount_percent}% хөнгөлөлт амжилттай хэрэгжлээ!`);
@@ -124,12 +124,12 @@ const BankTransferDialog = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!isFree && !confirmed) {
       toast.error("Төлбөр шилжүүлсэн гэдгээ баталгаажуулна уу");
       return;
     }
-    
+
     await onSubmit(transferCode, appliedPromo?.id || null, finalPrice, isFree);
     setConfirmed(false);
   };
@@ -162,8 +162,8 @@ const BankTransferDialog = ({
                   {price.toLocaleString()}₮
                 </span>
               </div>
-              {appliedPromo && (
-                <>
+              {appliedPromo &&
+              <>
                   <div className="flex justify-between text-green-600">
                     <span>Хөнгөлөлт ({appliedPromo.discount_percent}%):</span>
                     <span>-{discountAmount.toLocaleString()}₮</span>
@@ -175,14 +175,14 @@ const BankTransferDialog = ({
                     </span>
                   </div>
                 </>
-              )}
+              }
             </div>
           </div>
 
           {/* Promo Code Section */}
           <div className="space-y-2">
-            {appliedPromo ? (
-              <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
+            {appliedPromo ?
+            <div className="flex items-center justify-between p-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg">
                 <div className="flex items-center gap-2">
                   <Tag className="h-4 w-4 text-green-600" />
                   <span className="font-mono font-bold text-green-700 dark:text-green-400">
@@ -195,30 +195,30 @@ const BankTransferDialog = ({
                 <Button variant="ghost" size="icon" className="h-6 w-6" onClick={removePromo}>
                   <X className="h-4 w-4" />
                 </Button>
-              </div>
-            ) : (
-              <div className="flex gap-2">
+              </div> :
+
+            <div className="flex gap-2">
                 <Input
-                  placeholder="Promo код оруулах"
-                  value={promoCodeInput}
-                  onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
-                  className="font-mono uppercase"
-                />
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={checkPromoCode}
-                  disabled={checkingPromo || !promoCodeInput.trim()}
-                >
+                placeholder="Promo код оруулах"
+                value={promoCodeInput}
+                onChange={(e) => setPromoCodeInput(e.target.value.toUpperCase())}
+                className="font-mono uppercase" />
+              
+                <Button
+                type="button"
+                variant="outline"
+                onClick={checkPromoCode}
+                disabled={checkingPromo || !promoCodeInput.trim()}>
+                
                   {checkingPromo ? <Loader2 className="h-4 w-4 animate-spin" /> : "Шалгах"}
                 </Button>
               </div>
-            )}
+            }
           </div>
 
           {/* Bank Details - Only show if not free */}
-          {!isFree && (
-            <>
+          {!isFree &&
+          <>
               <div className="grid grid-cols-2 gap-2">
                 <div className="p-2 bg-card border rounded-lg">
                   <p className="text-xs text-muted-foreground">Банк</p>
@@ -248,7 +248,7 @@ const BankTransferDialog = ({
               {/* Transfer Code - Highlighted */}
               <div className="p-3 bg-primary/10 border-2 border-primary rounded-lg flex items-center justify-between">
                 <div>
-                  <p className="text-xs text-muted-foreground">Гүйлгээний утга (заавал бичнэ!)</p>
+                  <p className="text-xs text-destructive">Гүйлгээний утга (заавал бичнэ!)</p>
                   <p className="font-bold text-2xl text-primary font-mono">{transferCode}</p>
                 </div>
                 <Button variant="ghost" size="icon" onClick={() => copyToClipboard(transferCode, "code")}>
@@ -256,11 +256,11 @@ const BankTransferDialog = ({
                 </Button>
               </div>
             </>
-          )}
+          }
 
           {/* Free course notice */}
-          {isFree && (
-            <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-center">
+          {isFree &&
+          <div className="p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-center">
               <p className="text-green-700 dark:text-green-400 font-medium">
                 🎉 100% хөнгөлөлт! Төлбөр шаардлагагүй.
               </p>
@@ -268,35 +268,35 @@ const BankTransferDialog = ({
                 Доорх товчийг дарснаар сургалт нээгдэнэ.
               </p>
             </div>
-          )}
+          }
 
           {/* Confirmation */}
           <form onSubmit={handleSubmit} className="space-y-3">
-            {!isFree && (
-              <div className="flex items-center space-x-2">
+            {!isFree &&
+            <div className="flex items-center space-x-2">
                 <Checkbox
-                  id="confirmed"
-                  checked={confirmed}
-                  onCheckedChange={(checked) => setConfirmed(checked === true)}
-                />
+                id="confirmed"
+                checked={confirmed}
+                onCheckedChange={(checked) => setConfirmed(checked === true)} />
+              
                 <Label htmlFor="confirmed" className="text-sm cursor-pointer">
                   Төлбөр шилжүүлсэн
                 </Label>
               </div>
-            )}
+            }
 
-            <Button 
-              type="submit" 
-              className="w-full" 
-              disabled={isSubmitting || (!isFree && !confirmed)}
-            >
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isSubmitting || !isFree && !confirmed}>
+              
               {isSubmitting ? "Илгээж байна..." : isFree ? "Үнэгүй авах" : "Баталгаажуулах"}
             </Button>
           </form>
         </div>
       </DialogContent>
-    </Dialog>
-  );
+    </Dialog>);
+
 };
 
 export default BankTransferDialog;
