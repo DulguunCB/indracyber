@@ -195,8 +195,7 @@ const Contact = () => {
                   <div>
                     <h3 className="font-semibold mb-1">Хаяг</h3>
                     <p className="text-muted-foreground">
-                      Улаанбаатар хот, Сүхбаатар дүүрэг,<br />
-                      1-р хороо, Энхтайвны өргөн чөлөө 15
+                      Улаанбаатар хот
                     </p>
                   </div>
                 </div>
