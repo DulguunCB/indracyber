@@ -9,23 +9,23 @@ import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
+const DEFAULT_SETTINGS: Record<string, string> = {
+  siteName: "Mindly Academy",
+  siteDescription: "Онлайн сургалтын платформ",
+  contactEmail: "info@mindly.mn",
+  contactPhone: "+976 9999 9999",
+  bankName: "Хаан банк",
+  bankAccount: "5406163083",
+  bankAccountName: "Дөлгөөн",
+  maintenanceMode: "false",
+  allowRegistration: "true",
+};
+
 const AdminSettings = () => {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
-  // Site settings state
-  const [settings, setSettings] = useState({
-    siteName: "Mindly Academy",
-    siteDescription: "Онлайн сургалтын платформ",
-    contactEmail: "info@mindly.mn",
-    contactPhone: "+976 9999 9999",
-    bankName: "Хаан банк",
-    bankAccount: "5000123456",
-    bankAccountName: "Mindly Academy ХХК",
-    maintenanceMode: false,
-    allowRegistration: true,
-  });
+  const [settings, setSettings] = useState(DEFAULT_SETTINGS);
 
   useEffect(() => {
     checkAdminAccess();
@@ -51,10 +51,17 @@ const AdminSettings = () => {
       return;
     }
 
-    // Load settings from localStorage (in production, this would be from database)
-    const savedSettings = localStorage.getItem("site_settings");
-    if (savedSettings) {
-      setSettings(JSON.parse(savedSettings));
+    // Load settings from database
+    const { data, error } = await supabase
+      .from("site_settings")
+      .select("key, value");
+
+    if (!error && data) {
+      const dbSettings = { ...DEFAULT_SETTINGS };
+      data.forEach((row: { key: string; value: string }) => {
+        dbSettings[row.key] = row.value;
+      });
+      setSettings(dbSettings);
     }
 
     setLoading(false);
@@ -62,19 +69,40 @@ const AdminSettings = () => {
 
   const handleSave = async () => {
     setSaving(true);
-    
-    // Save to localStorage (in production, this would be to database)
-    localStorage.setItem("site_settings", JSON.stringify(settings));
-    
-    // Simulate API delay
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
-    toast.success("Тохиргоо амжилттай хадгалагдлаа");
-    setSaving(false);
+
+    try {
+      // Upsert each setting
+      const upserts = Object.entries(settings).map(([key, value]) => ({
+        key,
+        value: String(value),
+        updated_at: new Date().toISOString(),
+      }));
+
+      for (const item of upserts) {
+        const { error } = await supabase
+          .from("site_settings")
+          .update({ value: item.value, updated_at: item.updated_at })
+          .eq("key", item.key);
+
+        if (error) {
+          // If update fails (no row), try insert
+          await supabase
+            .from("site_settings")
+            .insert(item);
+        }
+      }
+
+      toast.success("Тохиргоо амжилттай хадгалагдлаа");
+    } catch (error) {
+      console.error("Error saving settings:", error);
+      toast.error("Тохиргоо хадгалахад алдаа гарлаа");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleChange = (field: string, value: string | boolean) => {
-    setSettings(prev => ({ ...prev, [field]: value }));
+    setSettings(prev => ({ ...prev, [field]: String(value) }));
   };
 
   if (loading) {
@@ -185,7 +213,7 @@ const AdminSettings = () => {
                 id="bankAccount"
                 value={settings.bankAccount}
                 onChange={(e) => handleChange("bankAccount", e.target.value)}
-                placeholder="5000123456"
+                placeholder="5406163083"
               />
             </div>
             <div className="space-y-2">
@@ -213,7 +241,7 @@ const AdminSettings = () => {
                 </div>
               </div>
               <Switch
-                checked={settings.allowRegistration}
+                checked={settings.allowRegistration === "true"}
                 onCheckedChange={(checked) => handleChange("allowRegistration", checked)}
               />
             </div>
@@ -226,7 +254,7 @@ const AdminSettings = () => {
                 </div>
               </div>
               <Switch
-                checked={settings.maintenanceMode}
+                checked={settings.maintenanceMode === "true"}
                 onCheckedChange={(checked) => handleChange("maintenanceMode", checked)}
               />
             </div>

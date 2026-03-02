@@ -32,21 +32,10 @@ const generateTransferCode = () => {
   return String(Math.floor(1000 + Math.random() * 9000));
 };
 
-const getBankDetails = () => {
-  const savedSettings = localStorage.getItem("site_settings");
-  if (savedSettings) {
-    const settings = JSON.parse(savedSettings);
-    return {
-      bankName: settings.bankName || "Хаан Банк",
-      accountNumber: settings.bankAccount || "5012345678",
-      accountName: settings.bankAccountName || "Нэгдсэн Сургалтын Төв ХХК"
-    };
-  }
-  return {
-    bankName: "Хаан Банк",
-    accountNumber: "5012345678",
-    accountName: "Нэгдсэн Сургалтын Төв ХХК"
-  };
+const DEFAULT_BANK = {
+  bankName: "Хаан Банк",
+  accountNumber: "5406163083",
+  accountName: "Дөлгөөн"
 };
 
 const BankTransferDialog = ({
@@ -57,7 +46,7 @@ const BankTransferDialog = ({
   onSubmit,
   isSubmitting
 }: BankTransferDialogProps) => {
-  const bankDetails = getBankDetails();
+  const [bankDetails, setBankDetails] = useState(DEFAULT_BANK);
   const [confirmed, setConfirmed] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [transferCode] = useState(() => generateTransferCode());
@@ -65,19 +54,36 @@ const BankTransferDialog = ({
   const [appliedPromo, setAppliedPromo] = useState<PromoCode | null>(null);
   const [checkingPromo, setCheckingPromo] = useState(false);
 
-  const discountAmount = appliedPromo ?
-  Math.round(price * appliedPromo.discount_percent / 100) :
-  0;
-  const finalPrice = price - discountAmount;
-  const isFree = finalPrice === 0;
-
   useEffect(() => {
-    if (!open) {
+    if (open) {
+      // Fetch bank details from database
+      supabase
+        .from("site_settings")
+        .select("key, value")
+        .in("key", ["bankName", "bankAccount", "bankAccountName"])
+        .then(({ data }) => {
+          if (data && data.length > 0) {
+            const details = { ...DEFAULT_BANK };
+            data.forEach((row: { key: string; value: string }) => {
+              if (row.key === "bankName") details.bankName = row.value;
+              if (row.key === "bankAccount") details.accountNumber = row.value;
+              if (row.key === "bankAccountName") details.accountName = row.value;
+            });
+            setBankDetails(details);
+          }
+        });
+    } else {
       setPromoCodeInput("");
       setAppliedPromo(null);
       setConfirmed(false);
     }
   }, [open]);
+
+  const discountAmount = appliedPromo
+    ? Math.round(price * appliedPromo.discount_percent / 100)
+    : 0;
+  const finalPrice = price - discountAmount;
+  const isFree = finalPrice === 0;
 
   const copyToClipboard = async (text: string, field: string) => {
     try {
