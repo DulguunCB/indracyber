@@ -348,11 +348,27 @@ const CourseDetail = () => {
             </div>
 
             {/* Description */}
-            <div>
-              <h2 className="text-2xl font-bold mb-4">Сургалтын тухай</h2>
-              <p className="text-muted-foreground whitespace-pre-wrap">
-                {course.description || course.short_description || "Тайлбар байхгүй"}
-              </p>
+            <div className="bg-card rounded-xl p-6 shadow-card">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                </div>
+                <h2 className="text-2xl font-bold">Сургалтын тухай</h2>
+              </div>
+              {course.short_description && course.description && (
+                <p className="text-lg text-foreground/80 font-medium mb-4 pb-4 border-b border-border">
+                  {course.short_description}
+                </p>
+              )}
+              <div className="text-muted-foreground leading-relaxed whitespace-pre-wrap">
+                {(course.description || course.short_description || "Тайлбар байхгүй")
+                  .split('\n\n')
+                  .map((paragraph, i) => (
+                    <p key={i} className={i > 0 ? "mt-4" : ""}>
+                      {paragraph}
+                    </p>
+                  ))}
+              </div>
             </div>
 
             {/* Instructor */}
