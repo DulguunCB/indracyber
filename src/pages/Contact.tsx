@@ -228,7 +228,8 @@ const Contact = () => {
                     <h3 className="font-semibold mb-1">Имэйл</h3>
                     <p className="text-muted-foreground">
                       <a href="mailto:info@mindly.mn" className="hover:text-primary transition-colors">
-                        info@mindly.mn
+                        ​mindly.study
+
                       </a>
                     </p>
                     <p className="text-muted-foreground">
@@ -259,7 +260,6 @@ const Contact = () => {
         </div>
       </section>
     </Layout>);
-
 };
 
 export default Contact;
