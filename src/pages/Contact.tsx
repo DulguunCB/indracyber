@@ -226,9 +226,8 @@ const Contact = () => {
                   <div>
                     <h3 className="font-semibold mb-1">Имэйл</h3>
                     <p className="text-muted-foreground">
-                      <a href="mailto:info@mindly.mn" className="hover:text-primary transition-colors">
-                        ​mindly.study
-
+                      <a href="mailto:mindly.study" className="hover:text-primary transition-colors">
+                        mindly.study
                       </a>
                     </p>
                     <p className="text-muted-foreground">
