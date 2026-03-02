@@ -32,10 +32,21 @@ const generateTransferCode = () => {
   return String(Math.floor(1000 + Math.random() * 9000));
 };
 
-const BANK_DETAILS = {
-  bankName: "Хаан Банк",
-  accountNumber: "5012345678",
-  accountName: "Нэгдсэн Сургалтын Төв ХХК"
+const getBankDetails = () => {
+  const savedSettings = localStorage.getItem("site_settings");
+  if (savedSettings) {
+    const settings = JSON.parse(savedSettings);
+    return {
+      bankName: settings.bankName || "Хаан Банк",
+      accountNumber: settings.bankAccount || "5012345678",
+      accountName: settings.bankAccountName || "Нэгдсэн Сургалтын Төв ХХК"
+    };
+  }
+  return {
+    bankName: "Хаан Банк",
+    accountNumber: "5012345678",
+    accountName: "Нэгдсэн Сургалтын Төв ХХК"
+  };
 };
 
 const BankTransferDialog = ({
@@ -46,6 +57,7 @@ const BankTransferDialog = ({
   onSubmit,
   isSubmitting
 }: BankTransferDialogProps) => {
+  const bankDetails = getBankDetails();
   const [confirmed, setConfirmed] = useState(false);
   const [copiedField, setCopiedField] = useState<string | null>(null);
   const [transferCode] = useState(() => generateTransferCode());
@@ -222,14 +234,14 @@ const BankTransferDialog = ({
               <div className="grid grid-cols-2 gap-2">
                 <div className="p-2 bg-card border rounded-lg">
                   <p className="text-xs text-muted-foreground">Банк</p>
-                  <p className="font-medium text-sm">{BANK_DETAILS.bankName}</p>
+                  <p className="font-medium text-sm">{bankDetails.bankName}</p>
                 </div>
                 <div className="p-2 bg-card border rounded-lg flex items-center justify-between">
                   <div>
                     <p className="text-xs text-muted-foreground">Дансны дугаар</p>
-                    <p className="font-medium text-sm font-mono">{BANK_DETAILS.accountNumber}</p>
+                    <p className="font-medium text-sm font-mono">{bankDetails.accountNumber}</p>
                   </div>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(BANK_DETAILS.accountNumber, "account")}>
+                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(bankDetails.accountNumber, "account")}>
                     {copiedField === "account" ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
                   </Button>
                 </div>
@@ -238,9 +250,9 @@ const BankTransferDialog = ({
               <div className="p-2 bg-card border rounded-lg flex items-center justify-between">
                 <div>
                   <p className="text-xs text-muted-foreground">Дансны нэр</p>
-                  <p className="font-medium text-sm">{BANK_DETAILS.accountName}</p>
+                  <p className="font-medium text-sm">{bankDetails.accountName}</p>
                 </div>
-                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(BANK_DETAILS.accountName, "name")}>
+                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => copyToClipboard(bankDetails.accountName, "name")}>
                   {copiedField === "name" ? <Check className="h-3 w-3 text-green-500" /> : <Copy className="h-3 w-3" />}
                 </Button>
               </div>
