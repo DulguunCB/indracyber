@@ -13,31 +13,31 @@ import {
   FormField,
   FormItem,
   FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+  FormMessage } from
+"@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 
 const contactSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(1, { message: "Нэрээ оруулна уу" })
-    .max(100, { message: "Нэр хэт урт байна" }),
-  email: z
-    .string()
-    .trim()
-    .email({ message: "Зөв имэйл хаяг оруулна уу" })
-    .max(255, { message: "Имэйл хэт урт байна" }),
-  phone: z
-    .string()
-    .trim()
-    .min(8, { message: "Утасны дугаар оруулна уу" })
-    .max(20, { message: "Утасны дугаар хэт урт байна" }),
-  message: z
-    .string()
-    .trim()
-    .min(10, { message: "Мессеж хамгийн багадаа 10 тэмдэгт байх ёстой" })
-    .max(1000, { message: "Мессеж хэт урт байна" }),
+  name: z.
+  string().
+  trim().
+  min(1, { message: "Нэрээ оруулна уу" }).
+  max(100, { message: "Нэр хэт урт байна" }),
+  email: z.
+  string().
+  trim().
+  email({ message: "Зөв имэйл хаяг оруулна уу" }).
+  max(255, { message: "Имэйл хэт урт байна" }),
+  phone: z.
+  string().
+  trim().
+  min(8, { message: "Утасны дугаар оруулна уу" }).
+  max(20, { message: "Утасны дугаар хэт урт байна" }),
+  message: z.
+  string().
+  trim().
+  min(10, { message: "Мессеж хамгийн багадаа 10 тэмдэгт байх ёстой" }).
+  max(1000, { message: "Мессеж хэт урт байна" })
 });
 
 type ContactFormValues = z.infer<typeof contactSchema>;
@@ -52,21 +52,21 @@ const Contact = () => {
       name: "",
       email: "",
       phone: "",
-      message: "",
-    },
+      message: ""
+    }
   });
 
   const onSubmit = async (data: ContactFormValues) => {
     setIsSubmitting(true);
-    
+
     // Simulate sending message
     await new Promise((resolve) => setTimeout(resolve, 1000));
-    
+
     toast({
       title: "Мессеж илгээгдлээ!",
-      description: "Бид тантай удахгүй холбогдох болно.",
+      description: "Бид тантай удахгүй холбогдох болно."
     });
-    
+
     form.reset();
     setIsSubmitting(false);
   };
@@ -99,79 +99,79 @@ const Contact = () => {
                   <FormField
                     control={form.control}
                     name="name"
-                    render={({ field }) => (
-                      <FormItem>
+                    render={({ field }) =>
+                    <FormItem>
                         <FormLabel>Нэр</FormLabel>
                         <FormControl>
                           <Input placeholder="Таны нэр" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
-                    )}
-                  />
+                    } />
+                  
 
                   <div className="grid sm:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
                       name="email"
-                      render={({ field }) => (
-                        <FormItem>
+                      render={({ field }) =>
+                      <FormItem>
                           <FormLabel>Имэйл</FormLabel>
                           <FormControl>
                             <Input type="email" placeholder="example@mail.com" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
-                      )}
-                    />
+                      } />
+                    
 
                     <FormField
                       control={form.control}
                       name="phone"
-                      render={({ field }) => (
-                        <FormItem>
+                      render={({ field }) =>
+                      <FormItem>
                           <FormLabel>Утас</FormLabel>
                           <FormControl>
                             <Input type="tel" placeholder="9912 3456" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
-                      )}
-                    />
+                      } />
+                    
                   </div>
 
                   <FormField
                     control={form.control}
                     name="message"
-                    render={({ field }) => (
-                      <FormItem>
+                    render={({ field }) =>
+                    <FormItem>
                         <FormLabel>Мессеж</FormLabel>
                         <FormControl>
-                          <Textarea 
-                            placeholder="Таны мессеж..." 
-                            className="min-h-[150px] resize-none"
-                            {...field} 
-                          />
+                          <Textarea
+                          placeholder="Таны мессеж..."
+                          className="min-h-[150px] resize-none"
+                          {...field} />
+                        
                         </FormControl>
                         <FormMessage />
                       </FormItem>
-                    )}
-                  />
+                    } />
+                  
 
-                  <Button 
-                    type="submit" 
-                    className="w-full" 
+                  <Button
+                    type="submit"
+                    className="w-full"
                     size="lg"
-                    disabled={isSubmitting}
-                  >
-                    {isSubmitting ? (
-                      "Илгээж байна..."
-                    ) : (
-                      <>
+                    disabled={isSubmitting}>
+                    
+                    {isSubmitting ?
+                    "Илгээж байна..." :
+
+                    <>
                         <Send className="mr-2 h-4 w-4" />
                         Илгээх
                       </>
-                    )}
+                    }
                   </Button>
                 </form>
               </Form>
@@ -209,12 +209,12 @@ const Contact = () => {
                     <h3 className="font-semibold mb-1">Утас</h3>
                     <p className="text-muted-foreground">
                       <a href="tel:+97699123456" className="hover:text-primary transition-colors">
-                        +976 9912 3456
+                        +976 94651282 
                       </a>
                     </p>
                     <p className="text-muted-foreground">
                       <a href="tel:+97677123456" className="hover:text-primary transition-colors">
-                        +976 7712 3456
+                        ​
                       </a>
                     </p>
                   </div>
@@ -258,8 +258,8 @@ const Contact = () => {
           </div>
         </div>
       </section>
-    </Layout>
-  );
+    </Layout>);
+
 };
 
 export default Contact;
